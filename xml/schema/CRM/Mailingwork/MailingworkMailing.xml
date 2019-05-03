@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/Mailingwork</base>
+  <class>MailingworkMailing</class>
+  <name>civicrm_mailingwork_mailing</name>
+  <comment></comment>
+  <log>true</log>
+
+  <field>
+    <name>id</name>
+    <title>Mailing ID</title>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Unique Mailingwork Mailing ID</comment>
+  </field>
+
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>true</autoincrement>
+  </primaryKey>
+
+  <field>
+    <name>mailingwork_identifier</name>
+    <title>Mailingwork Identifier</title>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Unique identifier of mailing in Mailingwork</comment>
+  </field>
+
+  <index>
+    <name>UI_mailingwork_identifier</name>
+    <fieldName>mailingwork_identifier</fieldName>
+    <unique>true</unique>
+  </index>
+
+  <field>
+    <name>subject</name>
+    <title>Subject</title>
+    <type>varchar</type>
+    <length>998</length>
+    <required>false</required>
+    <comment>Subject of the mailing</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+
+  <field>
+    <name>description</name>
+    <title>Description</title>
+    <type>text</type>
+    <required>false</required>
+    <comment>Subject of the mailing</comment>
+    <html>
+      <type>TextArea</type>
+      <rows>4</rows>
+      <cols>60</cols>
+    </html>
+  </field>
+
+  <field>
+    <name>sender_name</name>
+    <title>Sender Name</title>
+    <type>varchar</type>
+    <length>255</length>
+    <required>false</required>
+    <comment>Sender name of the mailing</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+
+  <field>
+    <name>sender_email</name>
+    <title>Sender Email</title>
+    <type>varchar</type>
+    <length>255</length>
+    <required>false</required>
+    <comment>Sender email of the mailing</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+
+  <field>
+    <name>folder_id</name>
+    <title>Folder ID</title>
+    <type>int unsigned</type>
+    <required>false</required>
+    <comment>Folder ID of the mailing</comment>
+  </field>
+
+  <field>
+    <name>sending_date</name>
+    <title>Sending Date</title>
+    <type>datetime</type>
+    <required>false</required>
+    <comment>Date on which the mailing was sent</comment>
+    <html>
+      <type>Select Date</type>
+    </html>
+  </field>
+
+  <field>
+    <name>recipient_sync_date</name>
+    <title>Recipient Synchronization Date</title>
+    <type>datetime</type>
+    <required>false</required>
+    <comment>Date until which recipients have been synced</comment>
+    <html>
+      <type>Select Date</type>
+    </html>
+  </field>
+
+  <field>
+    <name>recipient_sync_status_id</name>
+    <title>Recipient Synchronization Status</title>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>ID of sync status</comment>
+    <default>1</default>
+    <pseudoconstant>
+      <optionGroupName>mailingwork_mailing_sync_status</optionGroupName>
+    </pseudoconstant>
+    <html>
+      <type>Select</type>
+    </html>
+  </field>
+
+  <field>
+    <name>opening_sync_date</name>
+    <title>Opening Synchronization Date</title>
+    <type>datetime</type>
+    <required>false</required>
+    <comment>Date until which openings have been synced</comment>
+    <html>
+      <type>Select Date</type>
+    </html>
+  </field>
+
+  <field>
+    <name>opening_sync_status_id</name>
+    <title>Opening Synchronization Status</title>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>ID of sync status</comment>
+    <default>1</default>
+    <pseudoconstant>
+      <optionGroupName>mailingwork_mailing_sync_status</optionGroupName>
+    </pseudoconstant>
+    <html>
+      <type>Select</type>
+    </html>
+  </field>
+
+  <field>
+    <name>click_sync_status</name>
+    <title>Click Synchronization Date</title>
+    <type>datetime</type>
+    <required>false</required>
+    <comment>Date until which clicks have been synced</comment>
+    <html>
+      <type>Select Date</type>
+    </html>
+  </field>
+
+  <field>
+    <name>click_sync_status_id</name>
+    <title>Click Synchronization Status</title>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>ID of sync status</comment>
+    <default>1</default>
+    <pseudoconstant>
+      <optionGroupName>mailingwork_mailing_sync_status</optionGroupName>
+    </pseudoconstant>
+    <html>
+      <type>Select</type>
+    </html>
+  </field>
+
+  <field>
+    <name>status_id</name>
+    <title>Mailing Status</title>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>ID of mailing status</comment>
+    <pseudoconstant>
+      <optionGroupName>mailingwork_mailing_status</optionGroupName>
+    </pseudoconstant>
+    <html>
+      <type>Select</type>
+    </html>
+  </field>
+
+  <field>
+    <name>type_id</name>
+    <title>Mailing Type</title>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>ID of mailing type</comment>
+    <pseudoconstant>
+      <optionGroupName>mailingwork_mailing_type</optionGroupName>
+    </pseudoconstant>
+    <html>
+      <type>Select</type>
+    </html>
+  </field>
+
+</table>
