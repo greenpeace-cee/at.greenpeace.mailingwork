@@ -34,5 +34,6 @@
 SET FOREIGN_KEY_CHECKS=0;
 
 DROP TABLE IF EXISTS `civicrm_mailingwork_mailing`;
+DROP TABLE IF EXISTS `civicrm_mailingwork_folder`;
 
 SET FOREIGN_KEY_CHECKS=1;

@@ -63,6 +63,7 @@
 SET FOREIGN_KEY_CHECKS=0;
 
 DROP TABLE IF EXISTS `civicrm_mailingwork_mailing`;
+DROP TABLE IF EXISTS `civicrm_mailingwork_folder`;
 
 SET FOREIGN_KEY_CHECKS=1;
 -- /*******************************************************
@@ -70,6 +71,29 @@ SET FOREIGN_KEY_CHECKS=1;
 -- * Create new tables
 -- *
 -- *******************************************************/
+
+-- /*******************************************************
+-- *
+-- * civicrm_mailingwork_folder
+-- *
+-- *******************************************************/
+CREATE TABLE `civicrm_mailingwork_folder` (
+
+
+     `id` int unsigned NOT NULL AUTO_INCREMENT  COMMENT 'Unique Mailingwork Folder ID',
+     `mailingwork_identifier` int unsigned NOT NULL   COMMENT 'Unique identifier of folder in Mailingwork',
+     `parent_id` int unsigned NULL   COMMENT 'Parent folder',
+     `name` varchar(255) NULL   COMMENT 'Folder name',
+     `campaign_id` int unsigned NULL   COMMENT 'Campaign ID associated with mailings in this folder.' 
+,
+        PRIMARY KEY (`id`)
+ 
+    ,     UNIQUE INDEX `UI_mailingwork_identifier`(
+        mailingwork_identifier
+  )
+  
+,          CONSTRAINT FK_civicrm_mailingwork_folder_parent_id FOREIGN KEY (`parent_id`) REFERENCES `civicrm_mailingwork_folder`(`id`) ON DELETE SET NULL,          CONSTRAINT FK_civicrm_mailingwork_folder_campaign_id FOREIGN KEY (`campaign_id`) REFERENCES `civicrm_campaign`(`id`) ON DELETE SET NULL  
+)    ;
 
 -- /*******************************************************
 -- *
@@ -85,7 +109,7 @@ CREATE TABLE `civicrm_mailingwork_mailing` (
      `description` text NULL   COMMENT 'Subject of the mailing',
      `sender_name` varchar(255) NULL   COMMENT 'Sender name of the mailing',
      `sender_email` varchar(255) NULL   COMMENT 'Sender email of the mailing',
-     `folder_id` int unsigned NULL   COMMENT 'Folder ID of the mailing',
+     `mailingwork_folder_id` int unsigned NULL   COMMENT 'Mailingwork Folder ID the mailing is located in',
      `sending_date` datetime NULL   COMMENT 'Date on which the mailing was sent',
      `recipient_sync_date` datetime NULL   COMMENT 'Date until which recipients have been synced',
      `recipient_sync_status_id` int unsigned NOT NULL  DEFAULT 1 COMMENT 'ID of sync status',
@@ -102,7 +126,7 @@ CREATE TABLE `civicrm_mailingwork_mailing` (
         mailingwork_identifier
   )
   
- 
+,          CONSTRAINT FK_civicrm_mailingwork_mailing_mailingwork_folder_id FOREIGN KEY (`mailingwork_folder_id`) REFERENCES `civicrm_mailingwork_folder`(`id`) ON DELETE SET NULL  
 )    ;
 
  

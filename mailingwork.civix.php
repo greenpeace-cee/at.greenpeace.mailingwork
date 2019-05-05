@@ -457,6 +457,12 @@ function _mailingwork_civix_civicrm_alterSettingsFolders(&$metaDataFolders = NUL
 
 function _mailingwork_civix_civicrm_entityTypes(&$entityTypes) {
   $entityTypes = array_merge($entityTypes, array (
+    'CRM_Mailingwork_DAO_MailingworkFolder' => 
+    array (
+      'name' => 'MailingworkFolder',
+      'class' => 'CRM_Mailingwork_DAO_MailingworkFolder',
+      'table' => 'civicrm_mailingwork_folder',
+    ),
     'CRM_Mailingwork_DAO_MailingworkMailing' => 
     array (
       'name' => 'MailingworkMailing',

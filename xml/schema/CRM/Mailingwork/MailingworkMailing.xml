@@ -84,12 +84,24 @@
   </field>
 
   <field>
-    <name>folder_id</name>
+    <name>mailingwork_folder_id</name>
     <title>Folder ID</title>
     <type>int unsigned</type>
     <required>false</required>
-    <comment>Folder ID of the mailing</comment>
+    <pseudoconstant>
+      <table>civicrm_mailingwork_folder</table>
+      <keyColumn>id</keyColumn>
+      <labelColumn>name</labelColumn>
+    </pseudoconstant>
+    <comment>Mailingwork Folder ID the mailing is located in</comment>
   </field>
+
+  <foreignKey>
+    <name>mailingwork_folder_id</name>
+    <table>civicrm_mailingwork_folder</table>
+    <key>id</key>
+    <onDelete>SET NULL</onDelete>
+  </foreignKey>
 
   <field>
     <name>sending_date</name>

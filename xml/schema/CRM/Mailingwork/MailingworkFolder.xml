@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/Mailingwork</base>
+  <class>MailingworkFolder</class>
+  <name>civicrm_mailingwork_folder</name>
+  <comment></comment>
+  <log>true</log>
+
+  <field>
+    <name>id</name>
+    <title>Folder ID</title>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Unique Mailingwork Folder ID</comment>
+  </field>
+
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>true</autoincrement>
+  </primaryKey>
+
+  <field>
+    <name>mailingwork_identifier</name>
+    <title>Mailingwork Identifier</title>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Unique identifier of folder in Mailingwork</comment>
+  </field>
+
+  <index>
+    <name>UI_mailingwork_identifier</name>
+    <fieldName>mailingwork_identifier</fieldName>
+    <unique>true</unique>
+  </index>
+
+  <field>
+    <name>parent_id</name>
+    <title>Parent Folder ID</title>
+    <type>int unsigned</type>
+    <required>false</required>
+    <pseudoconstant>
+      <table>civicrm_mailingwork_folder</table>
+      <keyColumn>id</keyColumn>
+      <labelColumn>name</labelColumn>
+    </pseudoconstant>
+    <comment>Parent folder</comment>
+  </field>
+
+  <foreignKey>
+    <name>parent_id</name>
+    <table>civicrm_mailingwork_folder</table>
+    <key>id</key>
+    <onDelete>SET NULL</onDelete>
+  </foreignKey>
+
+  <field>
+    <name>name</name>
+    <title>Folder Name</title>
+    <type>varchar</type>
+    <length>255</length>
+    <required>false</required>
+    <comment>Folder name</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+
+  <field>
+    <name>campaign_id</name>
+    <title>Campaign</title>
+    <type>int unsigned</type>
+    <required>false</required>
+    <pseudoconstant>
+      <table>civicrm_campaign</table>
+      <keyColumn>id</keyColumn>
+      <labelColumn>title</labelColumn>
+    </pseudoconstant>
+    <comment>Campaign ID associated with mailings in this folder.</comment>
+  </field>
+
+  <foreignKey>
+    <name>campaign_id</name>
+    <table>civicrm_campaign</table>
+    <key>id</key>
+    <onDelete>SET NULL</onDelete>
+  </foreignKey>
+
+</table>
