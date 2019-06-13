@@ -167,7 +167,7 @@
   </field>
 
   <field>
-    <name>click_sync_status</name>
+    <name>click_sync_date</name>
     <title>Click Synchronization Date</title>
     <type>datetime</type>
     <required>false</required>
