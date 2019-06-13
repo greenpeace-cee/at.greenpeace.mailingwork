@@ -152,14 +152,30 @@ function mailingwork_civicrm_preProcess($formName, &$form) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_navigationMenu
  *
+ */
 function mailingwork_civicrm_navigationMenu(&$menu) {
   _mailingwork_civix_insert_navigation_menu($menu, 'Mailings', array(
-    'label' => E::ts('New subliminal message'),
-    'name' => 'mailing_subliminal_message',
-    'url' => 'civicrm/mailing/subliminal',
+    'label' => E::ts('Mailingwork'),
+    'name' => 'Mailingwork',
+    'permission' => 'access CiviMail',
+    'operator' => 'OR',
+    'separator' => 2,
+  ));
+  _mailingwork_civix_insert_navigation_menu($menu, 'Mailings/Mailingwork', array(
+    'label' => E::ts('Mailings'),
+    'name' => 'Mailingwork_Mailings',
+    'url' => 'civicrm/mailingwork/mailings',
+    'permission' => 'access CiviMail',
+    'operator' => 'OR',
+    'separator' => 0,
+  ));
+  _mailingwork_civix_insert_navigation_menu($menu, 'Mailings/Mailingwork', array(
+    'label' => E::ts('Folders'),
+    'name' => 'Mailingwork_Folders',
+    'url' => 'civicrm/mailingwork/folders',
     'permission' => 'access CiviMail',
     'operator' => 'OR',
     'separator' => 0,
   ));
   _mailingwork_civix_navigationMenu($menu);
-} // */
+}

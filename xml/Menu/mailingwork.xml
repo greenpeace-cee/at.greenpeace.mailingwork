@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<menu>
+  <item>
+    <path>civicrm/mailingwork/mailings</path>
+    <page_callback>CRM_Mailingwork_Page_Mailings</page_callback>
+    <title>Mailingwork Mailings</title>
+    <access_arguments>access CiviMail</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/mailingwork/folders</path>
+    <page_callback>CRM_Mailingwork_Page_Folders</page_callback>
+    <title>Mailingwork Folders</title>
+    <access_arguments>access CiviMail</access_arguments>
+  </item>
+</menu>

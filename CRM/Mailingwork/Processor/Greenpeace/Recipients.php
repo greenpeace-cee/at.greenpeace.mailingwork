@@ -1,6 +1,7 @@
 <?php
 
 class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Processor_Base {
+  private $activityTypeId = NULL;
 
   public function import() {
     $import_results = [];
@@ -108,6 +109,16 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
     ];
   }
 
+  /**
+   * Resolve to current contact_id using de.systopia.identitytracker
+   *
+   * We bypass the API and use identitytracker internals for performance reasons
+   * This may break when identitytracker is updated
+   *
+   * @param $recipient
+   *
+   * @return int|null
+   */
   protected function resolveContactId($recipient) {
     if (empty($recipient['Contact_ID'])) {
       return NULL;
@@ -122,12 +133,35 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
     return $query->entity_id;
   }
 
+  /**
+   * Create a Online_Mailing activity and add the contact
+   *
+   * @param $contact_id
+   * @param array $recipient
+   * @param array $mailing
+   *
+   * @return \CRM_Activity_BAO_Activity
+   */
   protected function createActivity($contact_id, array $recipient, array $mailing) {
+    if (is_null($this->activityTypeId)) {
+      $this->activityTypeId = CRM_Core_PseudoConstant::getKey(
+        'CRM_Activity_BAO_Activity',
+        'activity_type_id',
+        'Online_Mailing'
+      );
+    }
     $activity = new CRM_Activity_BAO_Activity();
     $activity->subject = trim($mailing['subject']);
     $activity->activity_date_time = $recipient['date'];
-    $activity->activity_type_id = 101; // TODO: fetch via DB
-    return $activity->save();
+    $activity->activity_type_id = $this->activityTypeId;
+    $activity->save();
+
+    $activity_contact = new CRM_Activity_BAO_ActivityContact();
+    $activity_contact->contact_id = $contact_id;
+    $activity_contact->activity_id = $activity->id;
+    $activity_contact->record_type_id = 3;
+    $activity_contact->save();
+    return $activity;
   }
 
   protected function prepareRecipient($item) {
