@@ -4,6 +4,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
   private $activityTypeId = NULL;
 
   public function import() {
+    $this->preloadFields();
     $import_results = [];
     if (empty($this->params['skip_mailing_sync'])) {
       // sync mailings first

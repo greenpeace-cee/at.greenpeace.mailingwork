@@ -23,11 +23,12 @@ class CRM_Mailingwork_Processor_Base {
    * CRM_Mailingwork_Processor_Base constructor.
    *
    * @param array $params import parameters
+   * @param mixed $url Mailingwork API endpoint URL
    * @param null $handler Guzzle handler, useful for mocking
    */
-  public function __construct(array $params, $handler = NULL) {
+  public function __construct(array $params, $url = FALSE, $handler = NULL) {
     $this->params = $params;
-    $this->client = Client::getClient($params['username'], $params['password'], FALSE, $handler);
+    $this->client = Client::getClient($params['username'], $params['password'], $url, $handler);
   }
 
   protected function preloadFields() {

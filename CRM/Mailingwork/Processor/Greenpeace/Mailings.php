@@ -2,9 +2,10 @@
 
 class CRM_Mailingwork_Processor_Greenpeace_Mailings extends CRM_Mailingwork_Processor_Base {
 
-  public function import() {
-    $this->preloadFields();
-    $this->importFolders();
+  public function import($importFolders = TRUE) {
+    if ($importFolders) {
+      $this->importFolders();
+    }
     $count = 0;
     $countExisting = 0;
     foreach ($this->client->api('mailing')->getMailings() as $mailing) {
