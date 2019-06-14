@@ -5,7 +5,7 @@ use bconnect\MailingWork\Client;
 class CRM_Mailingwork_Processor_Base {
 
   /**
-   * @var Client
+   * @var bconnect\MailingWork\Client
    */
   protected $client;
 
@@ -19,36 +19,31 @@ class CRM_Mailingwork_Processor_Base {
    */
   protected $fields = [];
 
-  public function __construct(array $params) {
+  /**
+   * CRM_Mailingwork_Processor_Base constructor.
+   *
+   * @param array $params import parameters
+   * @param null $handler Guzzle handler, useful for mocking
+   */
+  public function __construct(array $params, $handler = NULL) {
     $this->params = $params;
-    $this->client = Client::getClient($params['username'], $params['password']);
-    $this->preloadFields();
-    foreach ($this->client->api('mailing')->getMailings(NULL, NULL, '2017-06-01') as $mailing) {
-      if ($mailing->status == 'drafted') {
-        continue;
-      }
-      if ($mailing->id != 1067) {
-        continue;
-      }
-      $mailing_id = $mailing->id;
-      $mailing = $this->client->api('mailing')->getEmailById($mailing->id);
-      $start = 0;
-      $limit = 5;
-      $more_pages = TRUE;
-      /*$recipients = $this->client->api('recipient')->getRecipientsByEmailId($mailing_id, NULL, NULL, $start, $limit);
-      foreach ($recipients as $recipient) {
-        var_dump($this->prepareRecipient($recipient));
-      }*/
-    }
+    $this->client = Client::getClient($params['username'], $params['password'], FALSE, $handler);
   }
 
-  private function preloadFields() {
+  protected function preloadFields() {
     foreach ($this->client->api('field')->getFields() as $field) {
       $this->fields[$field->id] = $field->name;
     }
   }
 
-  // @TODO: move to Recipients.php
+  /**
+   * @param $item
+   *
+   * @TODO: move to Recipients.php
+   *
+   * @return array
+   * @throws \CRM_Mailingwork_Processor_Exception
+   */
   protected function prepareRecipient($item) {
     $recipient = [];
     $root_properties = ['recipient', 'date', 'email'];

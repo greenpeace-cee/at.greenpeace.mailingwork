@@ -1,7 +1,9 @@
 <?php
 
 class CRM_Mailingwork_Processor_Greenpeace_Mailings extends CRM_Mailingwork_Processor_Base {
+
   public function import() {
+    $this->preloadFields();
     $this->importFolders();
     $count = 0;
     $countExisting = 0;
@@ -36,7 +38,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Mailings extends CRM_Mailingwork_Proc
     return [
       'count'    => $count,
       'existing' => $countExisting,
-      'new'      => $count - $countExisting
+      'new'      => $count - $countExisting,
     ];
   }
 
