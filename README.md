@@ -1,5 +1,7 @@
 # CiviCRM Mailingwork Integration
 
+[![CircleCI](https://circleci.com/gh/greenpeace-cee/at.greenpeace.mailingwork.svg?style=svg)](https://circleci.com/gh/greenpeace-cee/at.greenpeace.mailingwork)
+
 This extension connects CiviCRM with [Mailingwork](https://mailingwork.de/), an email marketing tool.
 
 The extension is licensed under [AGPL-3.0](LICENSE.txt).
