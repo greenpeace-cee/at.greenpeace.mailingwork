@@ -25,8 +25,11 @@ commands:
         default: master
     steps:
       - run: |
-          cp /root/project /buildkit/build/<< parameters.build_name >>/sites/default/files/civicrm/ext/$CIRCLE_PROJECT_REPONAME -r
-          chown buildkit:buildkit /buildkit/build/<< parameters.build_name >>/sites/default/files/civicrm/ext/$CIRCLE_PROJECT_REPONAME -R
+          EXT_DIR=/buildkit/build/<< parameters.build_name >>/sites/default/files/civicrm/ext/$CIRCLE_PROJECT_REPONAME
+          cp /root/project $EXT_DIR -r
+          chown buildkit:buildkit $EXT_DIR -R
+          cd $EXT_DIR
+          composer install
           su - buildkit -c "cd /buildkit/build/<< parameters.build_name >> && cv en $CIRCLE_PROJECT_REPONAME"
   run_civilint:
     description: "Run civilint"
