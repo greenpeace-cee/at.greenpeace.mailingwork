@@ -2,6 +2,14 @@
 
 class CRM_Mailingwork_Processor_Greenpeace_Mailings extends CRM_Mailingwork_Processor_Base {
 
+  /**
+   * Fetch and process mailings
+   *
+   * @param bool $importFolders whether to import folders before processing mailings
+   *
+   * @return array import results
+   * @throws \CiviCRM_API3_Exception
+   */
   public function import($importFolders = TRUE) {
     if ($importFolders) {
       $this->importFolders();
@@ -43,6 +51,12 @@ class CRM_Mailingwork_Processor_Greenpeace_Mailings extends CRM_Mailingwork_Proc
     ];
   }
 
+  /**
+   * Import folders
+   *
+   * @return array
+   * @throws \CiviCRM_API3_Exception
+   */
   private function importFolders() {
     return civicrm_api3('MailingworkFolder', 'import', [
       'username' => $this->params['username'],
@@ -50,6 +64,14 @@ class CRM_Mailingwork_Processor_Greenpeace_Mailings extends CRM_Mailingwork_Proc
     ]);
   }
 
+  /**
+   * Get a folder by its identifier
+   *
+   * @param $identifier
+   *
+   * @return int|null ID of folder
+   * @throws \CiviCRM_API3_Exception
+   */
   private function getFolder($identifier) {
     $result = civicrm_api3('MailingworkFolder', 'get', [
       'return'                 => ['id'],

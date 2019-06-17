@@ -1,6 +1,13 @@
 <?php
 
 class CRM_Mailingwork_Processor_Greenpeace_Folders extends CRM_Mailingwork_Processor_Base {
+
+  /**
+   * Fetch and process folders
+   *
+   * @return array import results
+   * @throws \CiviCRM_API3_Exception
+   */
   public function import() {
     // array with PK of civicrm_mailingwork_folder => parent ID mailingwork_identifier
     $hierarchy = [];
@@ -9,7 +16,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Folders extends CRM_Mailingwork_Proce
     foreach ($this->client->api('folder')->getFolders() as $folder) {
       $data = [
         'mailingwork_identifier' => $folder->id,
-        'name'                   => $folder->name
+        'name'                   => $folder->name,
       ];
       $existing_folder = civicrm_api3('MailingworkFolder', 'get', [
         'return'                 => ['id'],

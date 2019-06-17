@@ -56,8 +56,6 @@ class CRM_Mailingwork_Processor_Base {
   /**
    * @param $item
    *
-   * @TODO: move to Recipients.php
-   *
    * @return array
    * @throws \CRM_Mailingwork_Processor_Exception
    */
@@ -84,6 +82,30 @@ class CRM_Mailingwork_Processor_Base {
       }
     }
     return $recipient;
+  }
+
+  /**
+   * Resolve to current contact_id using de.systopia.identitytracker
+   *
+   * We bypass the API and use identitytracker internals for performance reasons
+   * This may break when identitytracker is updated
+   *
+   * @param $recipient
+   *
+   * @return int|null
+   */
+  protected function resolveContactId($recipient) {
+    if (empty($recipient['Contact_ID'])) {
+      return NULL;
+    }
+    $query = CRM_Core_DAO::executeQuery(CRM_Identitytracker_Configuration::getSearchSQL(), [
+      1 => ['internal', 'String'],
+      2 => [$recipient['Contact_ID'], 'String'],
+    ]);
+    if (!$query->fetch()) {
+      return NULL;
+    };
+    return $query->entity_id;
   }
 
 }

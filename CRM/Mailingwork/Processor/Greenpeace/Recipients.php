@@ -111,30 +111,6 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
   }
 
   /**
-   * Resolve to current contact_id using de.systopia.identitytracker
-   *
-   * We bypass the API and use identitytracker internals for performance reasons
-   * This may break when identitytracker is updated
-   *
-   * @param $recipient
-   *
-   * @return int|null
-   */
-  protected function resolveContactId($recipient) {
-    if (empty($recipient['Contact_ID'])) {
-      return NULL;
-    }
-    $query = CRM_Core_DAO::executeQuery(CRM_Identitytracker_Configuration::getSearchSQL(), [
-      1 => ['internal', 'String'],
-      2 => [$recipient['Contact_ID'], 'String'],
-    ]);
-    if (!$query->fetch()) {
-      return NULL;
-    };
-    return $query->entity_id;
-  }
-
-  /**
    * Create a Online_Mailing activity and add the contact
    *
    * @param $contact_id
