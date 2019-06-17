@@ -5,6 +5,22 @@ use bconnect\MailingWork\Client;
 class CRM_Mailingwork_Processor_Base {
 
   /**
+   * Provider name for activity custom field
+   *
+   * @var string
+   */
+  const PROVIDER_NAME = 'Mailingwork';
+
+  /**
+   * Name of the field containing the recipient's email
+   *
+   * Used for APIs that don't return root-level email field (e.g. GetBounces)
+   *
+   * @var string
+   */
+  const EMAIL_FIELD = 'E-Mail';
+
+  /**
    * @var bconnect\MailingWork\Client
    */
   protected $client;
