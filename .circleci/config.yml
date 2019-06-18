@@ -38,7 +38,7 @@ commands:
         type: string
         default: master
     steps:
-      - run: su - buildkit -c "cd /buildkit/build/<< parameters.build_name >>/sites/default/files/civicrm/ext/$CIRCLE_PROJECT_REPONAME && civilint *"
+      - run: su - buildkit -c "cd /buildkit/build/<< parameters.build_name >>/sites/default/files/civicrm/ext/$CIRCLE_PROJECT_REPONAME && find . -type f -not -path './vendor/*' | civilint"
   run_phpunit:
     description: "Run PHPUnit"
     parameters:
