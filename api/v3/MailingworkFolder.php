@@ -1,5 +1,4 @@
 <?php
-use CRM_Mailingwork_ExtensionUtil as E;
 
 /**
  * MailingworkFolder.create API specification (optional)
@@ -80,4 +79,27 @@ function _civicrm_api3_mailingwork_folder_import_spec(&$spec) {
 function civicrm_api3_mailingwork_folder_import($params) {
   $processor = new CRM_Mailingwork_Processor_Greenpeace_Folders($params);
   return civicrm_api3_create_success($processor->import());
+}
+
+/**
+ * MailingworkFolder.getcampaign API specification
+ *
+ * @param array $spec description of fields supported by this API call
+ * @return void
+ * @see http://wiki.civicrm.org/confluence/display/CRMDOC/API+Architecture+Standards
+ */
+function _civicrm_api3_mailingwork_folder_getcampaign_spec(&$spec) {
+  $spec['id'] = [
+    'name'         => 'id',
+    'title'        => 'Folder ID',
+    'type'         => CRM_Utils_TYPE::T_INT,
+    'api.required' => 1,
+  ];
+}
+
+function civicrm_api3_mailingwork_folder_getcampaign($params) {
+  $campaign = civicrm_api3('Campaign', 'getsingle', [
+    'id' => CRM_Mailingwork_BAO_MailingworkFolder::getEffectiveCampaignId($params['id']),
+  ]);
+  return civicrm_api3_create_success($campaign);
 }

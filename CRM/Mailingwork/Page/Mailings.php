@@ -1,12 +1,15 @@
 <?php
-use CRM_Mailingwork_ExtensionUtil as E;
 
 class CRM_Mailingwork_Page_Mailings extends CRM_Core_Page {
 
   public function run() {
 
     $mailings = civicrm_api3('MailingworkMailing', 'get', [
-      'options' => ['limit' => 0, 'sort' => 'sending_date DESC, mailingwork_identifier DESC'],
+      'api.MailingworkFolder.getcampaign' => [],
+      'options' => [
+        'limit' => 0,
+        'sort' => 'sending_date DESC, mailingwork_identifier DESC',
+      ],
     ])['values'];
     foreach ($mailings as $id => $mailing) {
       $mailings[$id]['type_id'] = CRM_Core_PseudoConstant::getLabel(
@@ -41,8 +44,16 @@ class CRM_Mailingwork_Page_Mailings extends CRM_Core_Page {
         'click_sync_status_id',
         $mailing['click_sync_status_id']
       );
+      $mailings[$id]['campaign_title'] = $mailing['api.MailingworkFolder.getcampaign']['values']['title'];
     }
     $this->assign('rows', $mailings);
+
+    if (!empty(Civi::settings()->get('mailingwork_fallback_campaign'))) {
+      $this->assign('default_campaign', civicrm_api3('Campaign', 'getvalue', [
+        'return' => 'title',
+        'id'     => Civi::settings()->get('mailingwork_fallback_campaign'),
+      ]));
+    }
 
     parent::run();
   }

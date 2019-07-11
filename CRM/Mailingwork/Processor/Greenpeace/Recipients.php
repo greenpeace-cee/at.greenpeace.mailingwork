@@ -2,6 +2,8 @@
 
 class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Processor_Base {
   private $activityTypeId = NULL;
+  private $activityStatusId = NULL;
+  private $emailProviderId = NULL;
 
   public function import() {
     $this->preloadFields();
@@ -14,12 +16,14 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
       // fetch all mailings that haven't been fully synced yet
       $mailings = civicrm_api3('MailingworkMailing', 'get', [
         'recipient_sync_status_id' => ['IN' => ['pending', 'in_progress']],
+        'api.MailingworkMailing.getcampaign' => [],
         'options'                  => ['limit' => 0],
       ]);
     }
     else {
       $mailings = civicrm_api3('MailingworkMailing', 'get', [
         'id' => $this->params['mailingwork_mailing_id'],
+        'api.MailingworkMailing.getcampaign' => [],
       ]);
     }
     foreach ($mailings['values'] as $mailing) {
@@ -88,17 +92,16 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
       }
       foreach ($recipients as $recipient) {
         $recipient = $this->prepareRecipient($recipient);
-        $last_sending_date = $recipient['date'];
         $contact_id = $this->resolveContactId($recipient);
         if (empty($contact_id)) {
-          Civi::log()->info('Unable to identify contact: ' . $recipient['Contact_ID']);
+          Civi::log()->info('[Mailingwork/Recipients] Unable to identify contact: ' . $recipient['Contact_ID']);
           // TODO: match by other criteria, e.g. email?
           continue;
         }
-        $this->createActivity($contact_id, $recipient, $mailing);
-
-        $last_sending_date = $recipient->date;
-        $total_count++;
+        if ($this->createActivity($contact_id, $recipient, $mailing)) {
+          $last_sending_date = $recipient['date'];
+          $total_count++;
+        };
       }
     }
     // TODO: process 1K per iteration, wrapped in transaction, then update recipient_sync_date
@@ -117,9 +120,23 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
    * @param array $recipient
    * @param array $mailing
    *
-   * @return \CRM_Activity_BAO_Activity
+   * @return \CRM_Activity_BAO_Activity|null
+   * @throws \CiviCRM_API3_Exception
    */
   protected function createActivity($contact_id, array $recipient, array $mailing) {
+    $email_provider_field = 'custom_' . CRM_Core_BAO_CustomField::getCustomFieldID(
+      'email_provider',
+      'email_information'
+    );
+    $count_existing = civicrm_api3('Activity', 'getcount', [
+      'target_contact_id'  => $contact_id,
+      'activity_date_time'  => $recipient['date'],
+      'activity_type_id'    => 'Online_Mailing',
+      $email_provider_field => 'Mailingwork',
+    ]);
+    if ($count_existing > 0) {
+      return NULL;
+    }
     if (is_null($this->activityTypeId)) {
       $this->activityTypeId = CRM_Core_PseudoConstant::getKey(
         'CRM_Activity_BAO_Activity',
@@ -127,10 +144,30 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
         'Online_Mailing'
       );
     }
+    if (is_null($this->activityStatusId)) {
+      $this->activityStatusId = CRM_Core_PseudoConstant::getKey(
+        'CRM_Activity_BAO_Activity',
+        'status_id',
+        'Completed'
+      );
+    }
+    if (is_null($this->emailProviderId)) {
+      $this->emailProviderId = civicrm_api3('OptionValue', 'getvalue', [
+        'option_group_id' => 'email_provider',
+        'name'            => 'Mailingwork',
+        'return'          => 'value',
+      ]);
+    }
     $activity = new CRM_Activity_BAO_Activity();
     $activity->subject = trim($mailing['subject']);
+    $campaign_id = $mailing['api.MailingworkMailing.getcampaign']['values']['id'];
+    if (empty($campaign_id)) {
+      Civi::log()->warning('[Mailingwork/Recipients] Unknown campaign for : ' . $recipient['Contact_ID']);
+    }
+    $activity->campaign_id = $campaign_id;
     $activity->activity_date_time = $recipient['date'];
     $activity->activity_type_id = $this->activityTypeId;
+    $activity->status_id = $this->activityStatusId;
     $activity->save();
 
     $activity_contact = new CRM_Activity_BAO_ActivityContact();
@@ -138,6 +175,24 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
     $activity_contact->activity_id = $activity->id;
     $activity_contact->record_type_id = 3;
     $activity_contact->save();
+
+    CRM_Core_DAO::executeQuery(
+      "INSERT INTO civicrm_value_email_information
+                        (entity_id, email, mailing_subject, mailing_description,
+                         sender_name, mailing_type, email_provider, mailing_id)
+                      VALUES
+                        (%1, %2, %3, %4, %5, %6, %7, %8)",
+      [
+        1 => [$activity->id, 'Integer'],
+        2 => [$recipient['email'], 'String'],
+        3 => [trim($mailing['subject']), 'String'],
+        4 => [trim($mailing['description']), 'String'],
+        5 => [trim($mailing['sender_name']), 'String'],
+        6 => [$mailing['type_id'], 'String'],
+        7 => [$this->emailProviderId, 'String'],
+        8 => [$mailing['id'], 'String'],
+      ]
+    );
     return $activity;
   }
 

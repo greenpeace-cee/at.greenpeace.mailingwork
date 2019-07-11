@@ -7,7 +7,8 @@
     <dt>Sync Date</dt>
     <dd>Date until which items have been processed. Only items created after this date will be synchronized.</dd>
     <dt>Sync Status</dt>
-    <dd>Current status of the synchronization of this mailing.
+    <dd>
+      Current status of the synchronization of this mailing.
       <ul>
         <li>
           <strong>Pending:</strong> Synchronization of this mailing is pending and will start with the next
@@ -21,17 +22,36 @@
         </li>
       </ul>
     </dd>
+    <dt>Campaign</dt>
+    <dd>
+      This is the campaign that will be used for any future activities created by imports. The campaign is determined
+      by the folder in which the mailing is located. The campaign of parent folders is used if no campaign is
+      set for the mailing folder.
+      <br>
+      {if isset($default_campaign)}
+        If no campaign is set for any parent folders, the <strong>default campaign "{$default_campaign|escape}"</strong> is used.
+      {/if}
+      <br>
+      Campaigns may be overwritten for individual mailings by adding this code to their description in Mailingwork:
+      <code>[CiviCampaign=Campaign_ID]</code>, i.e. <code>[CiviCampaign=1234]</code>
+      <br>
+      <strong>Note:</strong> Campaigns associated with a mailing may change over time (for example if the folder or description is
+      edited), so activities that have already been created might be associated with different campaigns than the ones
+      shown on this page.
+    </dd>
   </dl>
 </div>
 
 <table cellpadding="0" cellspacing="0" border="0">
   <tr class="columnheader">
-    <th>{ts}Identifier{/ts}</th>
+    <th>{ts}ID{/ts}</th>
+    <th>{ts}Mailingwork Identifier{/ts}</th>
     <th>{ts}Date{/ts}</th>
     <th>{ts}Type{/ts}</th>
     <th>{ts}Mailing Status{/ts}</th>
     <th>{ts}Subject{/ts}</th>
     <th>{ts}Folder{/ts}</th>
+    <th>{ts}Campaign{/ts}</th>
     <th>{ts}Recipient Sync Date{/ts}</th>
     <th>{ts}Recipient Sync Status{/ts}</th>
     <th>{ts}Opening Sync Date{/ts}</th>
@@ -42,12 +62,14 @@
   {foreach from=$rows item=row}
     <tr data-entity="MailingworkMailing" data-id="{$row.id|escape}"
         class="crm-entity {cycle values="odd-row,even-row"}">
+      <td>{$row.id|escape}</td>
       <td>{$row.mailingwork_identifier|escape}</td>
       <td>{$row.sending_date|escape}</td>
       <td>{$row.type_id|escape}</td>
       <td>{$row.status_id|escape}</td>
-      <td>{$row.subject|escape}</td>
+      <td title="{$row.description|escape}">{$row.subject|escape}</td>
       <td>{$row.mailingwork_folder_id|escape}</td>
+      <td>{$row.campaign_title|escape}</td>
       <td class="crm-editable" data-field="recipient_sync_date">{$row.recipient_sync_date|escape}</td>
       <td class="crm-editable" data-field="recipient_sync_status_id"
           data-type="select">{$row.recipient_sync_status_id|escape}</td>

@@ -1,26 +1,39 @@
 <?php
-use CRM_Mailingwork_ExtensionUtil as E;
 
 class CRM_Mailingwork_BAO_MailingworkFolder extends CRM_Mailingwork_DAO_MailingworkFolder {
 
   /**
-   * Create a new MailingworkFolder based on array-data
+   * Get the campaign ID either explicitly set for this folder, inherited from
+   * parent(s), or the fallback (default) campaign from settings
    *
-   * @param array $params key-value pairs
-   * @return CRM_Mailingwork_DAO_MailingworkFolder|NULL
+   * @param int $folder_id
    *
-  public static function create($params) {
-    $className = 'CRM_Mailingwork_DAO_MailingworkFolder';
-    $entityName = 'MailingworkFolder';
-    $hook = empty($params['id']) ? 'create' : 'edit';
-
-    CRM_Utils_Hook::pre($hook, $entityName, CRM_Utils_Array::value('id', $params), $params);
-    $instance = new $className();
-    $instance->copyValues($params);
-    $instance->save();
-    CRM_Utils_Hook::post($hook, $entityName, $instance->id, $instance);
-
-    return $instance;
-  } */
+   * @todo this should really be something like a computed/virtual field so it's
+   *       available via API.get without any extra requests. I'm not sure how to
+   *       do that in a BAO though ...
+   *
+   * @return int Effective Campaign ID
+   */
+  public static function getEffectiveCampaignId($folder_id) {
+    while (TRUE) {
+      $query = CRM_Core_DAO::executeQuery(
+        "SELECT parent_id, campaign_id FROM civicrm_mailingwork_folder WHERE id = %1",
+        [
+          1 => [$folder_id, 'Integer'],
+        ]
+      );
+      if (!$query->fetch()) {
+        return NULL;
+      };
+      if (!empty($query->campaign_id)) {
+        return $query->campaign_id;
+      }
+      if (empty($query->parent_id)) {
+        // we're down to a root folder and found no campaign, use fallback
+        return Civi::settings()->get('mailingwork_fallback_campaign');
+      }
+      $folder_id = $query->parent_id;
+    }
+  }
 
 }
