@@ -26,6 +26,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
         'api.MailingworkMailing.getcampaign' => [],
       ]);
     }
+    $recipient_count = 0;
     foreach ($mailings['values'] as $mailing) {
       $type = CRM_Core_PseudoConstant::getName('CRM_Mailingwork_BAO_MailingworkMailing', 'type_id', $mailing['type_id']);
       $status = CRM_Core_PseudoConstant::getName('CRM_Mailingwork_BAO_MailingworkMailing', 'status_id', $mailing['status_id']);
@@ -38,10 +39,13 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
       $import_results[] = $result;
 
       if (!empty($result['date'])) {
+        $last_sending_date = new DateTime($result['date']);
+        // add one second to the recipient_sync_date so we avoid re-fetching
+        // the same recipients for large one-time mailings
+        $last_sending_date->add(new DateInterval('PT1S'));
         civicrm_api3('MailingworkMailing', 'create', [
           'id'                       => $mailing['id'],
-          'recipient_sync_status_id' => 'in_progress',
-          'recipient_sync_date'      => $result['date'],
+          'recipient_sync_date'      => $last_sending_date->format('Y-m-d H:i:s'),
         ]);
       }
 
@@ -54,6 +58,13 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
           'id'                       => $mailing['id'],
           'recipient_sync_status_id' => 'completed',
         ]);
+      }
+
+      if (!empty($result['recipients'])) {
+        $recipient_count += $result['recipients'];
+        if ($this->params['soft_limit'] > 0 && $recipient_count >= $this->params['soft_limit']) {
+          break;
+        }
       }
     }
     return $import_results;
@@ -75,7 +86,8 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
     $limit = 1000;
     $more_pages = TRUE;
     $last_sending_date = NULL;
-    $total_count = 0;
+    $activity_count = 0;
+    $recipient_count = 0;
     while ($more_pages) {
       $recipients = $this->client->api('recipient')
         ->getRecipientsByEmailId(
@@ -91,6 +103,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
         $more_pages = FALSE;
       }
       foreach ($recipients as $recipient) {
+        $recipient_count++;
         $recipient = $this->prepareRecipient($recipient);
         $contact_id = $this->resolveContactId($recipient);
         if (empty($contact_id)) {
@@ -100,15 +113,23 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
         }
         if ($this->createActivity($contact_id, $recipient, $mailing)) {
           $last_sending_date = $recipient['date'];
-          $total_count++;
+          $activity_count++;
         };
       }
+
+      if (!empty($last_sending_date)) {
+        civicrm_api3('MailingworkMailing', 'create', [
+          'id'                       => $mailing['id'],
+          'recipient_sync_status_id' => 'in_progress',
+          'recipient_sync_date'      => $last_sending_date,
+        ]);
+      }
     }
-    // TODO: process 1K per iteration, wrapped in transaction, then update recipient_sync_date
-    // if error occurs, rollback and return with success = false
+
     return [
       'success' => TRUE,
-      'count'   => $total_count,
+      'activities' => $activity_count,
+      'recipients' => $recipient_count,
       'date'    => $last_sending_date,
     ];
   }
@@ -175,6 +196,8 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
     $activity_contact->activity_id = $activity->id;
     $activity_contact->record_type_id = 3;
     $activity_contact->save();
+
+    // @TODO: Add "Added by" contact
 
     CRM_Core_DAO::executeQuery(
       "INSERT INTO civicrm_value_email_information
