@@ -33,9 +33,11 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
       if ($status == 'drafted') {
         continue;
       }
+      Civi::log()->info("[Mailingwork/Recipients] Starting synchronization of mailing {$mailing['id']}/{$mailing['subject']}. Start Date: {$mailing['recipient_sync_date']}");
       $sending_date = new DateTime($mailing['sending_date']);
       $result = $this->importRecipients($mailing);
       $result['id'] = $mailing['id'];
+      Civi::log()->info("[Mailingwork/Recipients] Finished synchronization of mailing {$mailing['id']}/{$mailing['subject']}. Recipients: {$result['recipients']}, Activities: {$result['activities']}");
       $import_results[] = $result;
 
       if (!empty($result['date'])) {
@@ -98,6 +100,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
           $limit
         );
       $count = count($recipients);
+      Civi::log()->info("[Mailingwork/Recipients] Fetched {$count} recipients of mailing {$mailing['id']}/{$mailing['subject']}");
       $start += $count;
       if ($count < $limit) {
         $more_pages = FALSE;
@@ -106,16 +109,20 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
         $recipient_count++;
         $recipient = $this->prepareRecipient($recipient);
         $contact_id = $this->resolveContactId($recipient);
+        $last_sending_date = $recipient['date'];
         if (empty($contact_id)) {
-          Civi::log()->info('[Mailingwork/Recipients] Unable to identify contact: ' . $recipient['Contact_ID']);
+          if (!empty($recipient['Contact_ID'])) {
+            Civi::log()->info('[Mailingwork/Recipients] Unable to identify contact: ' . $recipient['Contact_ID']);
+          }
           // TODO: match by other criteria, e.g. email?
           continue;
         }
         if ($this->createActivity($contact_id, $recipient, $mailing)) {
-          $last_sending_date = $recipient['date'];
           $activity_count++;
         };
       }
+
+      Civi::log()->info("[Mailingwork/Recipients] Processed {$count} recipients of mailing {$mailing['id']}/{$mailing['subject']}. Activity count: {$activity_count}");
 
       if (!empty($last_sending_date)) {
         civicrm_api3('MailingworkMailing', 'create', [
