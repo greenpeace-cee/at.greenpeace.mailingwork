@@ -4,6 +4,10 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
   private $activityTypeId = NULL;
   private $activityStatusId = NULL;
   private $emailProviderId = NULL;
+  private $sourceRecordTypeId = NULL;
+  private $targetRecordTypeId = NULL;
+  private $sourceContactId = NULL;
+  private $activityCache = [];
 
   public function import() {
     $this->preloadFields();
@@ -36,6 +40,8 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
       Civi::log()->info("[Mailingwork/Recipients] Starting synchronization of mailing {$mailing['id']}/{$mailing['subject']}. Start Date: {$mailing['recipient_sync_date']}");
       $sending_date = new DateTime($mailing['sending_date']);
       $result = $this->importRecipients($mailing);
+      // we're caching activities per mailing, so flush once done with one
+      $this->activityCache = [];
       $result['id'] = $mailing['id'];
       Civi::log()->info("[Mailingwork/Recipients] Finished synchronization of mailing {$mailing['id']}/{$mailing['subject']}. Recipients: {$result['recipients']}, Activities: {$result['activities']}");
       $import_results[] = $result;
@@ -148,23 +154,10 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
    * @param array $recipient
    * @param array $mailing
    *
-   * @return \CRM_Activity_BAO_Activity|null
+   * @return int|null
    * @throws \CiviCRM_API3_Exception
    */
   protected function createActivity($contact_id, array $recipient, array $mailing) {
-    $email_provider_field = 'custom_' . CRM_Core_BAO_CustomField::getCustomFieldID(
-      'email_provider',
-      'email_information'
-    );
-    $count_existing = civicrm_api3('Activity', 'getcount', [
-      'target_contact_id'  => $contact_id,
-      'activity_date_time'  => $recipient['date'],
-      'activity_type_id'    => 'Online_Mailing',
-      $email_provider_field => 'Mailingwork',
-    ]);
-    if ($count_existing > 0) {
-      return NULL;
-    }
     if (is_null($this->activityTypeId)) {
       $this->activityTypeId = CRM_Core_PseudoConstant::getKey(
         'CRM_Activity_BAO_Activity',
@@ -186,44 +179,126 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
         'return'          => 'value',
       ]);
     }
-    $activity = new CRM_Activity_BAO_Activity();
-    $activity->subject = trim($mailing['subject']);
-    $campaign_id = $mailing['api.MailingworkMailing.getcampaign']['values']['id'];
-    if (empty($campaign_id)) {
-      Civi::log()->warning('[Mailingwork/Recipients] Unknown campaign for : ' . $recipient['Contact_ID']);
+
+    if (is_null($this->sourceRecordTypeId)) {
+      $this->sourceRecordTypeId = CRM_Core_PseudoConstant::getKey(
+        'CRM_Activity_BAO_ActivityContact',
+        'record_type_id',
+        'Activity Source'
+      );
     }
-    $activity->campaign_id = $campaign_id;
-    $activity->activity_date_time = $recipient['date'];
-    $activity->activity_type_id = $this->activityTypeId;
-    $activity->status_id = $this->activityStatusId;
-    $activity->save();
 
-    $activity_contact = new CRM_Activity_BAO_ActivityContact();
-    $activity_contact->contact_id = $contact_id;
-    $activity_contact->activity_id = $activity->id;
-    $activity_contact->record_type_id = 3;
-    $activity_contact->save();
+    if (is_null($this->targetRecordTypeId)) {
+      $this->targetRecordTypeId = CRM_Core_PseudoConstant::getKey(
+        'CRM_Activity_BAO_ActivityContact',
+        'record_type_id',
+        'Activity Targets'
+      );
+    }
 
-    // @TODO: Add "Added by" contact
+    if (is_null($this->sourceContactId)) {
+      $session = CRM_Core_Session::singleton();
+      $this->sourceContactId = $session->get('userID');
+      if (empty($this->sourceContactId)) {
+        // @TODO: better fallback?
+        $this->sourceContactId = 1;
+      }
+    }
 
-    CRM_Core_DAO::executeQuery(
-      "INSERT INTO civicrm_value_email_information
+    $count_existing = CRM_Core_DAO::singleValueQuery(
+      "SELECT COUNT(*) AS countExisting
+      FROM civicrm_activity a
+      INNER JOIN civicrm_activity_contact ac ON ac.activity_id = a.id AND ac.record_type_id = %6
+      INNER JOIN civicrm_value_email_information e on e.entity_id = a.id
+      WHERE a.activity_date_time = %1
+        AND a.activity_type_id = %2
+        AND e.email_provider = %3
+        AND e.mailing_id = %4
+        AND ac.contact_id = %5",
+      [
+        1 => [$recipient['date'], 'String'],
+        2 => [$this->activityTypeId, 'Integer'],
+        3 => [$this->emailProviderId, 'Integer'],
+        4 => [$mailing['id'], 'String'],
+        5 => [$contact_id, 'Integer'],
+        6 => [$this->targetRecordTypeId, 'Integer'],
+      ]
+    );
+    if ($count_existing > 0) {
+      return NULL;
+    }
+
+    $activity_id = NULL;
+    if (Civi::settings()->get('mailingwork_use_mass_activities')) {
+      if (empty($this->activityCache[$mailing['id']][$recipient['date']])) {
+        $activity_id = CRM_Core_DAO::singleValueQuery(
+          "SELECT a.id
+          FROM civicrm_activity a
+          INNER JOIN civicrm_value_email_information e on e.entity_id = a.id
+          WHERE a.activity_date_time = %1
+            AND a.activity_type_id = %2
+            AND e.email_provider = %3
+            AND e.mailing_id = %4
+          LIMIT 1",
+          [
+            1 => [$recipient['date'], 'String'],
+            2 => [$this->activityTypeId, 'Integer'],
+            3 => [$this->emailProviderId, 'Integer'],
+            4 => [$mailing['id'], 'String'],
+          ]
+        );
+      }
+      else {
+        $activity_id = $this->activityCache[$mailing['id']][$recipient['date']];
+      }
+    }
+    if (empty($activity_id)) {
+      $activity = new CRM_Activity_BAO_Activity();
+      $activity->subject = trim($mailing['subject']);
+      $campaign_id = $mailing['api.MailingworkMailing.getcampaign']['values']['id'];
+      if (empty($campaign_id)) {
+        Civi::log()->warning('[Mailingwork/Recipients] Unknown campaign for: ' . $recipient['Contact_ID']);
+      }
+      $activity->campaign_id = $campaign_id;
+      $activity->activity_date_time = $recipient['date'];
+      $activity->activity_type_id = $this->activityTypeId;
+      $activity->status_id = $this->activityStatusId;
+      $activity->save();
+      $activity_id = $activity->id;
+
+      $activity_contact = new CRM_Activity_BAO_ActivityContact();
+      $activity_contact->contact_id = $this->sourceContactId;
+      $activity_contact->activity_id = $activity_id;
+      $activity_contact->record_type_id = $this->sourceRecordTypeId;
+      $activity_contact->save();
+
+      CRM_Core_DAO::executeQuery(
+        "INSERT INTO civicrm_value_email_information
                         (entity_id, email, mailing_subject, mailing_description,
                          sender_name, mailing_type, email_provider, mailing_id)
                       VALUES
                         (%1, %2, %3, %4, %5, %6, %7, %8)",
-      [
-        1 => [$activity->id, 'Integer'],
-        2 => [$recipient['email'], 'String'],
-        3 => [trim($mailing['subject']), 'String'],
-        4 => [trim($mailing['description']), 'String'],
-        5 => [trim($mailing['sender_name']), 'String'],
-        6 => [$mailing['type_id'], 'String'],
-        7 => [$this->emailProviderId, 'String'],
-        8 => [$mailing['id'], 'String'],
-      ]
-    );
-    return $activity;
+        [
+          1 => [$activity->id, 'Integer'],
+          2 => [Civi::settings()->get('mailingwork_use_mass_activities') ? '' : $recipient['email'], 'String'],
+          3 => [trim($mailing['subject']), 'String'],
+          4 => [trim($mailing['description']), 'String'],
+          5 => [trim($mailing['sender_name']), 'String'],
+          6 => [$mailing['type_id'], 'String'],
+          7 => [$this->emailProviderId, 'String'],
+          8 => [$mailing['id'], 'String'],
+        ]
+      );
+    }
+
+    $this->activityCache[$mailing['id']][$recipient['date']] = $activity_id;
+
+    $activity_contact = new CRM_Activity_BAO_ActivityContact();
+    $activity_contact->contact_id = $contact_id;
+    $activity_contact->activity_id = $activity_id;
+    $activity_contact->record_type_id = 3;
+    $activity_contact->save();
+    return $activity_id;
   }
 
   protected function prepareRecipient($item) {

@@ -27,4 +27,16 @@ return [
     'is_domain'       => 1,
     'is_contact'      => 0,
   ],
+  'mailingwork_use_mass_activities' => [
+    'name'            => 'mailingwork_use_mass_activities',
+    'type'            => 'Boolean',
+    'default'         => TRUE,
+    'quick_form_type' => 'YesNo',
+    'html_type'       => 'radio',
+    'add'             => '4.7',
+    'title'           => E::ts('Use mass activities for Mailingwork recipients'),
+    'description'     => E::ts('Whether to create (mass) activities with multiple contacts or one activity per recipient'),
+    'is_domain'       => 1,
+    'is_contact'      => 0,
+  ],
 ];
