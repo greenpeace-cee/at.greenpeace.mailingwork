@@ -25,12 +25,12 @@ commands:
         default: master
     steps:
       - run: |
-          EXT_DIR=/buildkit/build/<< parameters.build_name >>/sites/default/files/civicrm/ext/$CIRCLE_PROJECT_REPONAME
+          EXT_DIR=/buildkit/build/<< parameters.build_name >>/web/sites/default/files/civicrm/ext/$CIRCLE_PROJECT_REPONAME
           cp /root/project $EXT_DIR -r
           chown buildkit:buildkit $EXT_DIR -R
           cd $EXT_DIR
           composer install
-          su - buildkit -c "cd /buildkit/build/<< parameters.build_name >> && cv en $CIRCLE_PROJECT_REPONAME"
+          su - buildkit -c "cd /buildkit/build/<< parameters.build_name >>/web && cv en $CIRCLE_PROJECT_REPONAME"
   run_civilint:
     description: "Run civilint"
     parameters:
@@ -38,7 +38,7 @@ commands:
         type: string
         default: master
     steps:
-      - run: su - buildkit -c "cd /buildkit/build/<< parameters.build_name >>/sites/default/files/civicrm/ext/$CIRCLE_PROJECT_REPONAME && find . -type f -not -path './vendor/*' | civilint"
+      - run: su - buildkit -c "cd /buildkit/build/<< parameters.build_name >>/web/sites/default/files/civicrm/ext/$CIRCLE_PROJECT_REPONAME && find . -type f -not -path './vendor/*' | civilint"
   run_phpunit:
     description: "Run PHPUnit"
     parameters:
@@ -46,7 +46,7 @@ commands:
         type: string
         default: master
     steps:
-      - run: su - buildkit -c "cd /buildkit/build/<< parameters.build_name >>/sites/default/files/civicrm/ext/$CIRCLE_PROJECT_REPONAME && phpunit5"
+      - run: su - buildkit -c "cd /buildkit/build/<< parameters.build_name >>/web/sites/default/files/civicrm/ext/$CIRCLE_PROJECT_REPONAME && phpunit5"
   run_all:
     description: "Run all steps"
     parameters:
