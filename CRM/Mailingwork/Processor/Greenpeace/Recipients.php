@@ -298,6 +298,12 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
     $activity_contact->activity_id = $activity_id;
     $activity_contact->record_type_id = 3;
     $activity_contact->save();
+
+    $activity_contact_email = new CRM_Mailingwork_BAO_ActivityContactEmail();
+    $activity_contact_email->activity_contact_id = $activity_contact->id;
+    $activity_contact_email->email = $recipient['email'];
+    $activity_contact_email->save();
+
     return $activity_id;
   }
 
