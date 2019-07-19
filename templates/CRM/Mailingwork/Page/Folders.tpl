@@ -2,7 +2,10 @@
   <p>
     This is a listing of all known folders seen during synchronization with Mailingwork. Change the campaign field to
     change campaign assignments for activities created when synchronizing mailings in a folder, or leave it empty to use
-    either the default campaign (FOO) or the campaign of the parent folder (if set).
+    {if isset($default_campaign)}
+      either the default campaign "{$default_campaign|escape}" or
+    {/if}
+    the campaign of the parent folder (if set).
   </p>
   <p>
     Note: Mailings may override the campaign setting by using [CIVICAMPAIGN:XXXX] (where XXXX is the campaign ID) in

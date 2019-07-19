@@ -45,7 +45,12 @@ class CRM_Mailingwork_Page_Folders extends CRM_Core_Page {
 
     $this->assign('rows', $folders);
 
-    // TODO: set default campaign
+    if (!empty(Civi::settings()->get('mailingwork_fallback_campaign'))) {
+      $this->assign('default_campaign', civicrm_api3('Campaign', 'getvalue', [
+        'return' => 'title',
+        'id'     => Civi::settings()->get('mailingwork_fallback_campaign'),
+      ]));
+    }
 
     parent::run();
   }
