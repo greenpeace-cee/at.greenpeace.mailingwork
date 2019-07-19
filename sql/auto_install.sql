@@ -64,6 +64,7 @@ SET FOREIGN_KEY_CHECKS=0;
 
 DROP TABLE IF EXISTS `civicrm_mailingwork_mailing`;
 DROP TABLE IF EXISTS `civicrm_mailingwork_folder`;
+DROP TABLE IF EXISTS `civicrm_activity_contact_email`;
 
 SET FOREIGN_KEY_CHECKS=1;
 -- /*******************************************************
@@ -71,6 +72,24 @@ SET FOREIGN_KEY_CHECKS=1;
 -- * Create new tables
 -- *
 -- *******************************************************/
+
+-- /*******************************************************
+-- *
+-- * civicrm_activity_contact_email
+-- *
+-- *******************************************************/
+CREATE TABLE `civicrm_activity_contact_email` (
+
+
+     `id` int unsigned NOT NULL AUTO_INCREMENT  COMMENT 'Unique ActivityContactEmail ID',
+     `activity_contact_id` int unsigned    COMMENT 'FK to ActivityContact',
+     `email` varchar(255) NULL   COMMENT 'email used to communicate with the contact' 
+,
+        PRIMARY KEY (`id`)
+ 
+ 
+,          CONSTRAINT FK_civicrm_activity_contact_email_activity_contact_id FOREIGN KEY (`activity_contact_id`) REFERENCES `civicrm_activity_contact`(`id`) ON DELETE CASCADE  
+)    ;
 
 -- /*******************************************************
 -- *

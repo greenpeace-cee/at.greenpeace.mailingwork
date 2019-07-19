@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/Mailingwork</base>
+  <class>ActivityContactEmail</class>
+  <name>civicrm_activity_contact_email</name>
+  <comment></comment>
+  <log>true</log>
+
+  <field>
+    <name>id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Unique ActivityContactEmail ID</comment>
+  </field>
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>true</autoincrement>
+  </primaryKey>
+
+  <field>
+    <name>activity_contact_id</name>
+    <type>int unsigned</type>
+    <comment>FK to ActivityContact</comment>
+  </field>
+  <foreignKey>
+    <name>activity_contact_id</name>
+    <table>civicrm_activity_contact</table>
+    <key>id</key>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
+
+  <field>
+    <name>email</name>
+    <title>Email</title>
+    <type>varchar</type>
+    <length>255</length>
+    <required>false</required>
+    <comment>email used to communicate with the contact</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+
+</table>
