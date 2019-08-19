@@ -7,6 +7,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
   private $sourceRecordTypeId = NULL;
   private $targetRecordTypeId = NULL;
   private $sourceContactId = NULL;
+  private $emailMediumId = NULL;
   private $activityCache = [];
 
   public function import() {
@@ -196,6 +197,14 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
       );
     }
 
+    if (is_null($this->emailMediumId)) {
+      $this->emailMediumId = CRM_Core_PseudoConstant::getKey(
+        'CRM_Activity_BAO_Activity',
+        'medium_id',
+        'email'
+      );
+    }
+
     if (is_null($this->sourceContactId)) {
       $session = CRM_Core_Session::singleton();
       $this->sourceContactId = $session->get('userID');
@@ -263,6 +272,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
       $activity->activity_date_time = $recipient['date'];
       $activity->activity_type_id = $this->activityTypeId;
       $activity->status_id = $this->activityStatusId;
+      $activity->medium_id = $this->emailMediumId;
       $activity->save();
       $activity_id = $activity->id;
 
