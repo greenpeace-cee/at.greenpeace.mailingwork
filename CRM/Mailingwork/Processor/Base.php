@@ -36,6 +36,13 @@ class CRM_Mailingwork_Processor_Base {
   protected $fields = [];
 
   /**
+   * Required root properties that should be present in API responses
+   *
+   * @var array
+   */
+  protected $rootProperties = ['recipient', 'date', 'email'];
+
+  /**
    * CRM_Mailingwork_Processor_Base constructor.
    *
    * @param array $params import parameters
@@ -61,8 +68,7 @@ class CRM_Mailingwork_Processor_Base {
    */
   protected function prepareRecipient($item) {
     $recipient = [];
-    $root_properties = ['recipient', 'date', 'email'];
-    foreach ($root_properties as $property) {
+    foreach ($this->rootProperties as $property) {
       if (!property_exists($item, $property)) {
         throw new CRM_Mailingwork_Processor_Exception(
           'Property "' . $property . '" not set'
@@ -106,6 +112,19 @@ class CRM_Mailingwork_Processor_Base {
       return NULL;
     };
     return $query->entity_id;
+  }
+
+  /**
+   * Import Mailingwork mailing meta data
+   *
+   * @return array
+   * @throws \CiviCRM_API3_Exception
+   */
+  protected function importMailings() {
+    return civicrm_api3('MailingworkMailing', 'import', [
+      'username' => $this->params['username'],
+      'password' => $this->params['password'],
+    ]);
   }
 
 }

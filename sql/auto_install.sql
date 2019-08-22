@@ -136,6 +136,8 @@ CREATE TABLE `civicrm_mailingwork_mailing` (
      `opening_sync_status_id` int unsigned NOT NULL  DEFAULT 1 COMMENT 'ID of sync status',
      `click_sync_date` datetime NULL   COMMENT 'Date until which clicks have been synced',
      `click_sync_status_id` int unsigned NOT NULL  DEFAULT 1 COMMENT 'ID of sync status',
+     `bounce_sync_date` datetime NULL   COMMENT 'Date until which bounces have been synced',
+     `bounce_sync_status_id` int unsigned NOT NULL  DEFAULT 1 COMMENT 'ID of sync status',
      `status_id` int unsigned NOT NULL   COMMENT 'ID of mailing status',
      `type_id` int unsigned NOT NULL   COMMENT 'ID of mailing type' 
 ,

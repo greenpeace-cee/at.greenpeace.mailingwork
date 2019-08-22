@@ -193,6 +193,32 @@
   </field>
 
   <field>
+    <name>bounce_sync_date</name>
+    <title>Bounce Synchronization Date</title>
+    <type>datetime</type>
+    <required>false</required>
+    <comment>Date until which bounces have been synced</comment>
+    <html>
+      <type>Select Date</type>
+    </html>
+  </field>
+
+  <field>
+    <name>bounce_sync_status_id</name>
+    <title>Bounce Synchronization Status</title>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>ID of sync status</comment>
+    <default>1</default>
+    <pseudoconstant>
+      <optionGroupName>mailingwork_mailing_sync_status</optionGroupName>
+    </pseudoconstant>
+    <html>
+      <type>Select</type>
+    </html>
+  </field>
+
+  <field>
     <name>status_id</name>
     <title>Mailing Status</title>
     <type>int unsigned</type>

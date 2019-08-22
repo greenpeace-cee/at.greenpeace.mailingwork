@@ -58,6 +58,8 @@
     <th>{ts}Opening Sync Status{/ts}</th>
     <th>{ts}Click Sync Date{/ts}</th>
     <th>{ts}Click Sync Status{/ts}</th>
+    <th>{ts}Bounce Sync Date{/ts}</th>
+    <th>{ts}Bounce Sync Status{/ts}</th>
   </tr>
   {foreach from=$rows item=row}
     <tr data-entity="MailingworkMailing" data-id="{$row.id|escape}"
@@ -79,6 +81,9 @@
       <td class="crm-editable" data-field="click_sync_date">{$row.click_sync_date|escape}</td>
       <td class="crm-editable" data-field="click_sync_status_id"
           data-type="select">{$row.click_sync_status_id|escape}</td>
+      <td class="crm-editable" data-field="bounce_sync_date">{$row.bounce_sync_date|escape}</td>
+      <td class="crm-editable" data-field="bounce_sync_status_id"
+          data-type="select">{$row.bounce_sync_status_id|escape}</td>
     </tr>
   {/foreach}
 </table>

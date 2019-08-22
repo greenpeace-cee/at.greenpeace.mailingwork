@@ -18,6 +18,15 @@ function _civicrm_api3_mailingwork_bounce_import_spec(&$spec) {
     'api.default'  => 0,
   ];
 
+  $spec['skip_mailing_sync'] = [
+    'name'         => 'skip_mailing_sync',
+    'title'        => 'Skip fetching new mailings?',
+    'description'  => 'Should fetching new mailings be skipped before importing recipients?',
+    'type'         => CRM_Utils_TYPE::T_BOOLEAN,
+    'api.required' => 0,
+    'api.default'  => FALSE,
+  ];
+
   $spec['username'] = [
     'name'         => 'username',
     'title'        => 'Mailingwork API User',

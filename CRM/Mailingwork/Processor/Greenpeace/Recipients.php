@@ -79,13 +79,6 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
     return $import_results;
   }
 
-  private function importMailings() {
-    return civicrm_api3('MailingworkMailing', 'import', [
-      'username' => $this->params['username'],
-      'password' => $this->params['password'],
-    ]);
-  }
-
   private function importRecipients(array $mailing) {
     $start_date = NULL;
     if (!empty($mailing['recipient_sync_date'])) {

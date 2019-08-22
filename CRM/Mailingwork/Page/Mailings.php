@@ -44,6 +44,11 @@ class CRM_Mailingwork_Page_Mailings extends CRM_Core_Page {
         'click_sync_status_id',
         $mailing['click_sync_status_id']
       );
+      $mailings[$id]['bounce_sync_status_id'] = CRM_Core_PseudoConstant::getLabel(
+        'CRM_Mailingwork_BAO_MailingworkMailing',
+        'bounce_sync_status_id',
+        $mailing['bounce_sync_status_id']
+      );
       $mailings[$id]['campaign_title'] = $mailing['api.MailingworkFolder.getcampaign']['values']['title'];
     }
     $this->assign('rows', $mailings);
