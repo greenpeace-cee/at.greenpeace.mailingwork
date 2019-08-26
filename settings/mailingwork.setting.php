@@ -27,4 +27,16 @@ return [
     'is_domain'       => 1,
     'is_contact'      => 0,
   ],
+  'mailingwork_retained_emails_last_hardbounce_from' => [
+    'name'            => 'mailingwork_retained_emails_last_hardbounce_from',
+    'type'            => 'String',
+    'default'         => '',
+    'quick_form_type' => 'Element',
+    'html_type'       => 'text',
+    'add'             => '4.7',
+    'title'           => E::ts('Mailingwork Retained Emails Last Hardbounce From Date'),
+    'description'     => E::ts('Earliest last Hardbounce date which should be imported.'),
+    'is_domain'       => 1,
+    'is_contact'      => 0,
+  ],
 ];
