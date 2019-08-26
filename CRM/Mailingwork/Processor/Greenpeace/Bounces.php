@@ -121,9 +121,6 @@ class CRM_Mailingwork_Processor_Greenpeace_Bounces extends CRM_Mailingwork_Proce
     if (!empty($mailing['bounce_sync_date'])) {
       $start_date = $mailing['bounce_sync_date'];
     }
-    elseif (!empty($mailing['recipient_sync_date'])) {
-      $start_date = $mailing['recipient_sync_date'];
-    }
     Civi::log()->info("[Mailingwork/Bounces] Starting synchronization of mailing {$mailing['id']}/{$mailing['subject']}. Start Date: {$start_date}");
     $start = 0;
     $limit = 1000;

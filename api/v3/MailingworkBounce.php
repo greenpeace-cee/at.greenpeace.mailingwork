@@ -27,6 +27,14 @@ function _civicrm_api3_mailingwork_bounce_import_spec(&$spec) {
     'api.default'  => FALSE,
   ];
 
+  $spec['mailingwork_mailing_id'] = [
+    'name'         => 'mailingwork_mailing_id',
+    'title'        => 'Mailingwork Mailing ID',
+    'description'  => 'Which mailing should be synced? Note: This is NOT mailingwork_identifier!',
+    'type'         => CRM_Utils_TYPE::T_INT,
+    'api.required' => 0,
+  ];
+
   $spec['username'] = [
     'name'         => 'username',
     'title'        => 'Mailingwork API User',
