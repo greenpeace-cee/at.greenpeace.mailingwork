@@ -33,17 +33,21 @@ class CRM_Mailingwork_Processor_Greenpeace_RetainedEmails extends CRM_Mailingwor
           continue;
         }
         // this chained API call:
-        //  - Deletes all matching email addresses
+        //  - Puts all matching emails on hold
         //  - Creates a "Contact Updated" activity to log this action
         //  - Assigns the activity to the contact
         //  - Links the activity with the email address via ActivityContactEmail
         $result = civicrm_api3('Email', 'get', [
           'return'                          => ['id', 'contact_id'],
           'email'                           => $email,
-          'api.email.delete'                => [],
+          'on_hold'                         => FALSE,
+          'api.Email.create'                => [
+            'id'      => '$value.id',
+            'on_hold' => TRUE
+          ],
           'api.Activity.create'             => [
             'activity_type_id' => 'contact_updated',
-            'subject'          => 'Email deleted after too many bounces',
+            'subject'          => 'Email put on hold after too many bounces',
           ],
           'api.ActivityContact.create'      => [
             'activity_id'    => '$value.api.Activity.create.id',
