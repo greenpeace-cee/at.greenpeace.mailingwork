@@ -5,7 +5,7 @@ class CRM_Mailingwork_Page_Mailings extends CRM_Core_Page {
   public function run() {
 
     $mailings = civicrm_api3('MailingworkMailing', 'get', [
-      'api.MailingworkFolder.getcampaign' => [],
+      'api.MailingworkMailing.getcampaign' => [],
       'options' => [
         'limit' => 0,
         'sort' => 'sending_date DESC, mailingwork_identifier DESC',
@@ -49,7 +49,7 @@ class CRM_Mailingwork_Page_Mailings extends CRM_Core_Page {
         'bounce_sync_status_id',
         $mailing['bounce_sync_status_id']
       );
-      $mailings[$id]['campaign_title'] = $mailing['api.MailingworkFolder.getcampaign']['values']['title'];
+      $mailings[$id]['campaign_title'] = $mailing['api.MailingworkMailing.getcampaign']['values']['title'];
     }
     $this->assign('rows', $mailings);
 

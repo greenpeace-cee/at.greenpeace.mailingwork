@@ -20,7 +20,7 @@ class CRM_Mailingwork_BAO_MailingworkMailing extends CRM_Mailingwork_DAO_Mailing
       'return' => 'description,mailingwork_folder_id',
       'id'     => $mailing_id,
     ]);
-    if (preg_match('/\[CiviCampaign=(\d+)\]/i', $mailing['description'], $matches)) {
+    if (!empty($mailing['description']) && preg_match('/\[CiviCampaign=(\d+)\]/i', $mailing['description'], $matches)) {
       // found a campaign in description, verify it exists
       try {
         return civicrm_api3('Campaign', 'getvalue', [
