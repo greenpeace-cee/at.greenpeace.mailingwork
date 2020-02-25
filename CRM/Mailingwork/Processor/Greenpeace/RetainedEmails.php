@@ -43,7 +43,7 @@ class CRM_Mailingwork_Processor_Greenpeace_RetainedEmails extends CRM_Mailingwor
           'on_hold'                         => FALSE,
           'api.Email.create'                => [
             'id'      => '$value.id',
-            'on_hold' => TRUE
+            'on_hold' => 1,
           ],
           'api.Activity.create'             => [
             'activity_type_id' => 'contact_updated',
