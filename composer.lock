@@ -12,7 +12,7 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/greenpeace-cee/mailingwork.git",
-                "reference": "eb65ed08726419e69584623909fc59ca141979da"
+                "reference": "dbab2425e1849e70dd8e2bfaa7c008e6b0058441"
             },
             "require": {
                 "guzzlehttp/guzzle": "^6.3",
@@ -42,7 +42,7 @@
                 "mailingwork",
                 "newsletter"
             ],
-            "time": "2019-06-14T13:29:39+00:00"
+            "time": "2019-08-27T11:14:18+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",
