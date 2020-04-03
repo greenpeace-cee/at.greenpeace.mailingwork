@@ -16,7 +16,12 @@ commands:
         type: string
         default: http://localhost:8080
     steps:
-      - run: su - buildkit -c "/buildkit/bin/civibuild create << parameters.build_name >> --civi-ver << parameters.version >> --type << parameters.type >> --url << parameters.url >>"
+      - run: |
+          civiver=<< parameters.version >>
+          if [[ "$civiver" == "stable" ]]; then
+            civiver=$(curl -s 'https://latest.civicrm.org/stable.php')
+          fi
+          su - buildkit -c "/buildkit/bin/civibuild create << parameters.build_name >> --civi-ver $civiver --type << parameters.type >> --url << parameters.url >>"
   install_extension:
     description: "Install Extension"
     parameters:
@@ -38,7 +43,7 @@ commands:
         type: string
         default: master
     steps:
-      - run: su - buildkit -c "cd /buildkit/build/<< parameters.build_name >>/web/sites/default/files/civicrm/ext/$CIRCLE_PROJECT_REPONAME && find . -type f -not -path './vendor/*' | civilint"
+      - run: su - buildkit -c "cd /buildkit/build/<< parameters.build_name >>/web/sites/default/files/civicrm/ext/$CIRCLE_PROJECT_REPONAME && find . -type f -not -path './vendor/*' | civilint -"
   run_phpunit:
     description: "Run PHPUnit"
     parameters:
@@ -46,7 +51,10 @@ commands:
         type: string
         default: master
     steps:
-      - run: su - buildkit -c "cd /buildkit/build/<< parameters.build_name >>/web/sites/default/files/civicrm/ext/$CIRCLE_PROJECT_REPONAME && phpunit5"
+      - run: |
+          mkdir -p /phpunit /coverage
+          chown buildkit:buildkit /phpunit /coverage
+          su - buildkit -c "cd /buildkit/build/<< parameters.build_name >>/web/sites/default/files/civicrm/ext/$CIRCLE_PROJECT_REPONAME && phpdbg -qrr /buildkit/bin/phpunit5 --log-junit /phpunit/<< parameters.build_name >>/junit.xml --coverage-html /coverage/<< parameters.build_name >>"
   run_all:
     description: "Run all steps"
     parameters:
@@ -70,10 +78,17 @@ commands:
           url: << parameters.url >>
       - install_extension:
           build_name: << parameters.build_name >>
-      - run_civilint:
-          build_name: << parameters.build_name >>
+      # TODO: enable civilint
+      # - run_civilint:
+      #     build_name: << parameters.build_name >>
       - run_phpunit:
           build_name: << parameters.build_name >>
+      - store_test_results:
+          path: /phpunit
+      - store_artifacts:
+          path: /phpunit
+      - store_artifacts:
+          path: /coverage
 
 executors:
   civicrm:
@@ -97,13 +112,17 @@ jobs:
       - checkout
       - run_all
       - run_all:
-          build_name: civi-5.7
-          version: "5.7"
+          build_name: civi-stable
+          version: "stable"
           url: http://localhost:8081
       - run_all:
-          build_name: civi-5.13
-          version: "5.13"
+          build_name: civi-5.21
+          version: "5.21"
           url: http://localhost:8082
+      - run_all:
+          build_name: civi-5.19
+          version: "5.19"
+          url: http://localhost:8083
   build_mariadb_10_2:
     executor: civicrm
     docker:
@@ -122,13 +141,17 @@ jobs:
       - checkout
       - run_all
       - run_all:
-          build_name: civi-5.7
-          version: "5.7"
+          build_name: civi-stable
+          version: "stable"
           url: http://localhost:8081
       - run_all:
-          build_name: civi-5.13
-          version: "5.13"
+          build_name: civi-5.21
+          version: "5.21"
           url: http://localhost:8082
+      - run_all:
+          build_name: civi-5.19
+          version: "5.19"
+          url: http://localhost:8083
   build_mariadb_10_3:
     executor: civicrm
     docker:
@@ -147,13 +170,17 @@ jobs:
       - checkout
       - run_all
       - run_all:
-          build_name: civi-5.7
-          version: "5.7"
+          build_name: civi-stable
+          version: "stable"
           url: http://localhost:8081
       - run_all:
-          build_name: civi-5.13
-          version: "5.13"
+          build_name: civi-5.21
+          version: "5.21"
           url: http://localhost:8082
+      - run_all:
+          build_name: civi-5.19
+          version: "5.19"
+          url: http://localhost:8083
 
 workflows:
   version: 2
