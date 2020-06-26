@@ -37,6 +37,7 @@ class CRM_Mailingwork_Processor_Greenpeace_FoldersTest extends \PHPUnit_Framewor
     $container = [];
     $history = Middleware::history($container);
     $mock = new MockHandler([
+      new Response(200, [], '{"error":0,"message":"successfully executed","result":[{"id":1,"name":"E-Mail","description":"mandatory","alias":"E-Mail","type":"varchar","options":"","default":"","behavior":"email"},{"id":17,"name":"Contact_ID","description":"","alias":"personID","type":"int","options":"","default":"","behavior":""}]}'),
       new Response(200, [], '{"error":0,"message":"successfully executed","result":[{"id":1,"parent_id":0,"name":"1: Parent_1","role_ids":[]},{"id":5,"parent_id":7,"name":"2.1: Child_1","role_ids":[]},{"id":7,"parent_id":0,"name":"2: Parent_2","role_ids":[]},{"id":2,"parent_id":1,"name":"1.1: Child_1","role_ids":[]},{"id":3,"parent_id":1,"name":"1.2: Child_2","role_ids":[]},{"id":4,"parent_id":7,"name":"2.2: Child_2","role_ids":[]}]}'),
     ]);
     $stack = HandlerStack::create($mock);

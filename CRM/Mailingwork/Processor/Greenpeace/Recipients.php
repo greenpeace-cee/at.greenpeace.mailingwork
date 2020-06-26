@@ -1,17 +1,12 @@
 <?php
 
 class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Processor_Base {
-  private $activityTypeId = NULL;
-  private $activityStatusId = NULL;
-  private $emailProviderId = NULL;
   private $sourceRecordTypeId = NULL;
-  private $targetRecordTypeId = NULL;
   private $sourceContactId = NULL;
   private $emailMediumId = NULL;
   private $activityCache = [];
 
   public function import() {
-    $this->preloadFields();
     $import_results = [];
     if (empty($this->params['skip_mailing_sync'])) {
       // sync mailings first
@@ -152,41 +147,11 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
    * @throws \CiviCRM_API3_Exception
    */
   protected function createActivity($contact_id, array $recipient, array $mailing) {
-    if (is_null($this->activityTypeId)) {
-      $this->activityTypeId = CRM_Core_PseudoConstant::getKey(
-        'CRM_Activity_BAO_Activity',
-        'activity_type_id',
-        'Online_Mailing'
-      );
-    }
-    if (is_null($this->activityStatusId)) {
-      $this->activityStatusId = CRM_Core_PseudoConstant::getKey(
-        'CRM_Activity_BAO_Activity',
-        'status_id',
-        'Completed'
-      );
-    }
-    if (is_null($this->emailProviderId)) {
-      $this->emailProviderId = civicrm_api3('OptionValue', 'getvalue', [
-        'option_group_id' => 'email_provider',
-        'name'            => 'Mailingwork',
-        'return'          => 'value',
-      ]);
-    }
-
     if (is_null($this->sourceRecordTypeId)) {
       $this->sourceRecordTypeId = CRM_Core_PseudoConstant::getKey(
         'CRM_Activity_BAO_ActivityContact',
         'record_type_id',
         'Activity Source'
-      );
-    }
-
-    if (is_null($this->targetRecordTypeId)) {
-      $this->targetRecordTypeId = CRM_Core_PseudoConstant::getKey(
-        'CRM_Activity_BAO_ActivityContact',
-        'record_type_id',
-        'Activity Targets'
       );
     }
 

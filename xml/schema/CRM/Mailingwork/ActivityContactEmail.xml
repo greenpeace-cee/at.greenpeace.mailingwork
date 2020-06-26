@@ -21,6 +21,7 @@
   <field>
     <name>activity_contact_id</name>
     <type>int unsigned</type>
+    <required>true</required>
     <comment>FK to ActivityContact</comment>
   </field>
   <foreignKey>

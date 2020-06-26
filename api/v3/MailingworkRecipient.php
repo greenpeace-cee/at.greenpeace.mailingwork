@@ -1,5 +1,4 @@
 <?php
-use CRM_Donutapp_ExtensionUtil as E;
 
 /**
  * MailingworkRecipient.import API specification (optional)

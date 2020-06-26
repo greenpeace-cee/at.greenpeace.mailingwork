@@ -11,7 +11,7 @@ return [
       'title'     => 'Mailingwork Mailing Status',
       'data_type' => 'Integer',
       'is_active' => 1,
-    ]
+    ],
   ],
   [
     'module'  => 'at.greenpeace.mailingwork',
@@ -24,7 +24,7 @@ return [
       'title'     => 'Mailingwork Mailing Synchronization Status',
       'data_type' => 'Integer',
       'is_active' => 1,
-    ]
+    ],
   ],
   [
     'module'  => 'at.greenpeace.mailingwork',
@@ -37,7 +37,7 @@ return [
       'title'     => 'Mailingwork Mailing Type',
       'data_type' => 'Integer',
       'is_active' => 1,
-    ]
+    ],
   ],
   [
     'module'  => 'at.greenpeace.mailingwork',
@@ -51,7 +51,7 @@ return [
       'name'            => 'drafted',
       'label'           => 'Drafted',
       'is_active'       => 1,
-    ]
+    ],
   ],
   [
     'module'  => 'at.greenpeace.mailingwork',
@@ -65,7 +65,7 @@ return [
       'name'            => 'activated',
       'label'           => 'Activated',
       'is_active'       => 1,
-    ]
+    ],
   ],
   [
     'module'  => 'at.greenpeace.mailingwork',
@@ -79,7 +79,7 @@ return [
       'name'            => 'paused',
       'label'           => 'Paused',
       'is_active'       => 1,
-    ]
+    ],
   ],
   [
     'module'  => 'at.greenpeace.mailingwork',
@@ -93,7 +93,7 @@ return [
       'name'            => 'done',
       'label'           => 'Done',
       'is_active'       => 1,
-    ]
+    ],
   ],
   [
     'module'  => 'at.greenpeace.mailingwork',
@@ -107,7 +107,7 @@ return [
       'name'            => 'cancelled',
       'label'           => 'Cancelled',
       'is_active'       => 1,
-    ]
+    ],
   ],
   [
     'module'  => 'at.greenpeace.mailingwork',
@@ -121,7 +121,7 @@ return [
       'name'            => 'standard',
       'label'           => 'Standard',
       'is_active'       => 1,
-    ]
+    ],
   ],
   [
     'module'  => 'at.greenpeace.mailingwork',
@@ -135,7 +135,7 @@ return [
       'name'            => 'dialog',
       'label'           => 'Dialog',
       'is_active'       => 1,
-    ]
+    ],
   ],
   [
     'module'  => 'at.greenpeace.mailingwork',
@@ -149,7 +149,7 @@ return [
       'name'            => 'campaign',
       'label'           => 'Campaign',
       'is_active'       => 1,
-    ]
+    ],
   ],
   [
     'module'  => 'at.greenpeace.mailingwork',
@@ -163,7 +163,7 @@ return [
       'name'            => 'pending',
       'label'           => 'Pending',
       'is_active'       => 1,
-    ]
+    ],
   ],
   [
     'module'  => 'at.greenpeace.mailingwork',
@@ -177,7 +177,7 @@ return [
       'name'            => 'in_progress',
       'label'           => 'In Progress',
       'is_active'       => 1,
-    ]
+    ],
   ],
   [
     'module'  => 'at.greenpeace.mailingwork',
@@ -191,6 +191,6 @@ return [
       'name'            => 'completed',
       'label'           => 'Completed',
       'is_active'       => 1,
-    ]
+    ],
   ],
 ];

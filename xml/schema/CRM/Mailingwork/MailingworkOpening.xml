@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/Mailingwork</base>
+  <class>MailingworkOpening</class>
+  <name>civicrm_mailingwork_opening</name>
+  <comment></comment>
+  <log>true</log>
+
+  <field>
+    <name>id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Unique MailingworkOpening ID</comment>
+  </field>
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>true</autoincrement>
+  </primaryKey>
+
+  <field>
+    <name>activity_contact_id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>FK to ActivityContact</comment>
+  </field>
+  <foreignKey>
+    <name>activity_contact_id</name>
+    <table>civicrm_activity_contact</table>
+    <key>id</key>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
+
+  <field>
+    <name>opening_date</name>
+    <title>Opening Date</title>
+    <type>datetime</type>
+    <required>true</required>
+    <comment>Date of the opening</comment>
+    <html>
+      <type>Select Date</type>
+    </html>
+  </field>
+
+  <field>
+    <name>user_agent_type_id</name>
+    <title>User Agent Type</title>
+    <type>int unsigned</type>
+    <required>false</required>
+    <comment>ID of user agent type</comment>
+    <default>1</default>
+    <pseudoconstant>
+      <optionGroupName>mailingwork_user_agent_type</optionGroupName>
+    </pseudoconstant>
+    <html>
+      <type>Select</type>
+    </html>
+  </field>
+
+  <field>
+    <name>user_agent_id</name>
+    <title>User Agent</title>
+    <type>int unsigned</type>
+    <required>false</required>
+    <comment>ID of user agent</comment>
+    <default>1</default>
+    <pseudoconstant>
+      <optionGroupName>mailingwork_user_agent</optionGroupName>
+    </pseudoconstant>
+    <html>
+      <type>Select</type>
+    </html>
+  </field>
+
+</table>

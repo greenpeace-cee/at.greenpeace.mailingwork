@@ -57,6 +57,7 @@ class CRM_Mailingwork_Processor_Greenpeace_RetainedEmailsTest extends \PHPUnit_F
     $container = [];
     $history = Middleware::history($container);
     $mock = new MockHandler([
+      new Response(200, [], '{"error":0,"message":"successfully executed","result":[{"id":1,"name":"E-Mail","description":"mandatory","alias":"E-Mail","type":"varchar","options":"","default":"","behavior":"email"},{"id":17,"name":"Contact_ID","description":"","alias":"personID","type":"int","options":"","default":"","behavior":""}]}'),
       new Response(200, [], '{"error":0,"message":"successfully executed","result":{"total":"3","data":[{"address":"foo@example.com"},{"address":"bar@example.org"},{"address":"unknown@example.org"}]}}'),
     ]);
     $stack = HandlerStack::create($mock);

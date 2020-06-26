@@ -10,26 +10,6 @@ class CRM_Mailingwork_Processor_Greenpeace_Bounces extends CRM_Mailingwork_Proce
   protected $rootProperties = ['recipient', 'date', 'email', 'type'];
 
   /**
-   * @var int
-   */
-  protected $activityTypeId;
-
-  /**
-   * @var int
-   */
-  private $activityStatusId;
-
-  /**
-   * @var int
-   */
-  private $emailProviderId;
-
-  /**
-   * @var int
-   */
-  private $targetRecordTypeId;
-
-  /**
    * Fetch and process bounces
    *
    * @todo DRY up code (Bounces/Clicks/Openings/Recipients)
@@ -38,8 +18,6 @@ class CRM_Mailingwork_Processor_Greenpeace_Bounces extends CRM_Mailingwork_Proce
    * @throws \Exception
    */
   public function import() {
-    $this->preloadFields();
-    $this->preloadPseudoConstants();
     $import_results = [];
     $bounce_count = 0;
     if (empty($this->params['skip_mailing_sync'])) {
@@ -95,6 +73,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Bounces extends CRM_Mailingwork_Proce
         ]);
       }
 
+      // TODO: refactor to use isSyncCompleted()
       // standard mailings: sync fully completed 30 days after they've been sent
       if (
         $type == 'standard' && ($status == 'done' || $status == 'cancelled') &&
@@ -183,59 +162,6 @@ class CRM_Mailingwork_Processor_Greenpeace_Bounces extends CRM_Mailingwork_Proce
   }
 
   /**
-   * Get Online_Mailing activity ID for matching contact, email and mailing
-   *
-   * @param $contact_id
-   * @param $bounceData
-   * @param $mailing
-   *
-   * @return int|null
-   */
-  protected function getParentActivityId($contact_id, $bounceData, $mailing) {
-    if (empty($bounceData[self::EMAIL_FIELD])) {
-      Civi::log()->warning('Cannot determine parent activity, no email given.');
-      return NULL;
-    }
-
-    $query = CRM_Core_DAO::executeQuery("
-      SELECT
-        a.id
-      FROM
-        civicrm_activity a
-      JOIN
-        civicrm_value_email_information e
-      ON
-        e.entity_id = a.id
-      JOIN
-        civicrm_activity_contact ac
-      ON
-        ac.activity_id = a.id AND record_type_id = %1
-      JOIN
-        civicrm_activity_contact_email ace
-      ON
-        ace.activity_contact_id = ac.id
-      WHERE
-        a.activity_type_id = %2 AND
-        e.email_provider = %3 AND
-        e.mailing_id = %4 AND
-        ac.contact_id = %5 AND
-        ace.email = %6",
-      [
-        1 => [$this->targetRecordTypeId, 'Integer'],
-        2 => [$this->activityTypeId, 'Integer'],
-        3 => [$this->emailProviderId, 'Integer'],
-        4 => [$mailing['id'], 'String'],
-        5 => [$contact_id, 'Integer'],
-        6 => [$bounceData[self::EMAIL_FIELD], 'String'],
-      ]
-    );
-    if (!$query->fetch()) {
-      return NULL;
-    }
-    return $query->id;
-  }
-
-  /**
    * Create a Bounce activity
    *
    * @param int $contact_id
@@ -285,9 +211,9 @@ class CRM_Mailingwork_Processor_Greenpeace_Bounces extends CRM_Mailingwork_Proce
       'campaign_id'         => $mailing['api.MailingworkMailing.getcampaign']['values']['id'],
     ];
 
-    $parent = $this->getParentActivityId($contact_id, $bounceData, $mailing);
+    $parent = $this->getParentActivity($contact_id, $bounceData, $mailing);
     if (!is_null($parent)) {
-      $params[$parent_field] = $parent;
+      $params[$parent_field] = $parent['activity_id'];
     }
 
     $dupes = civicrm_api3(
@@ -319,29 +245,6 @@ class CRM_Mailingwork_Processor_Greenpeace_Bounces extends CRM_Mailingwork_Proce
     ]);
 
     return $activity;
-  }
-
-  protected function preloadPseudoConstants() {
-    $this->activityTypeId = CRM_Core_PseudoConstant::getKey(
-      'CRM_Activity_BAO_Activity',
-      'activity_type_id',
-      'Online_Mailing'
-    );
-    $this->activityStatusId = CRM_Core_PseudoConstant::getKey(
-      'CRM_Activity_BAO_Activity',
-      'status_id',
-      'Completed'
-    );
-    $this->emailProviderId = civicrm_api3('OptionValue', 'getvalue', [
-      'option_group_id' => 'email_provider',
-      'name'            => 'Mailingwork',
-      'return'          => 'value',
-    ]);
-    $this->targetRecordTypeId = CRM_Core_PseudoConstant::getKey(
-      'CRM_Activity_BAO_ActivityContact',
-      'record_type_id',
-      'Activity Targets'
-    );
   }
 
 }

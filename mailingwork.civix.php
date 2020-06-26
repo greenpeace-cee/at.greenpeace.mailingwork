@@ -24,9 +24,9 @@ class CRM_Mailingwork_ExtensionUtil {
    *   Translated text.
    * @see ts
    */
-  public static function ts($text, $params = array()) {
+  public static function ts($text, $params = []) {
     if (!array_key_exists('domain', $params)) {
-      $params['domain'] = array(self::LONG_NAME, NULL);
+      $params['domain'] = [self::LONG_NAME, NULL];
     }
     return ts($text, $params);
   }
@@ -100,7 +100,7 @@ function _mailingwork_civix_civicrm_config(&$config = NULL) {
     array_unshift($template->template_dir, $extDir);
   }
   else {
-    $template->template_dir = array($extDir, $template->template_dir);
+    $template->template_dir = [$extDir, $template->template_dir];
   }
 
   $include_path = $extRoot . PATH_SEPARATOR . get_include_path();
@@ -140,7 +140,7 @@ function _mailingwork_civix_civicrm_install() {
 function _mailingwork_civix_civicrm_postInstall() {
   _mailingwork_civix_civicrm_config();
   if ($upgrader = _mailingwork_civix_upgrader()) {
-    if (is_callable(array($upgrader, 'onPostInstall'))) {
+    if (is_callable([$upgrader, 'onPostInstall'])) {
       $upgrader->onPostInstall();
     }
   }
@@ -166,7 +166,7 @@ function _mailingwork_civix_civicrm_uninstall() {
 function _mailingwork_civix_civicrm_enable() {
   _mailingwork_civix_civicrm_config();
   if ($upgrader = _mailingwork_civix_upgrader()) {
-    if (is_callable(array($upgrader, 'onEnable'))) {
+    if (is_callable([$upgrader, 'onEnable'])) {
       $upgrader->onEnable();
     }
   }
@@ -181,7 +181,7 @@ function _mailingwork_civix_civicrm_enable() {
 function _mailingwork_civix_civicrm_disable() {
   _mailingwork_civix_civicrm_config();
   if ($upgrader = _mailingwork_civix_upgrader()) {
-    if (is_callable(array($upgrader, 'onDisable'))) {
+    if (is_callable([$upgrader, 'onDisable'])) {
       $upgrader->onDisable();
     }
   }
@@ -194,8 +194,6 @@ function _mailingwork_civix_civicrm_disable() {
  * @param $queue CRM_Queue_Queue, (for 'enqueue') the modifiable list of pending up upgrade tasks
  *
  * @return mixed
- *   based on op. for 'check', returns array(boolean) (TRUE if upgrades are pending)
- *   for 'enqueue', returns void
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_upgrade
  */
@@ -218,22 +216,23 @@ function _mailingwork_civix_upgrader() {
 }
 
 /**
- * Search directory tree for files which match a glob pattern
+ * Search directory tree for files which match a glob pattern.
  *
  * Note: Dot-directories (like "..", ".git", or ".svn") will be ignored.
  * Note: In Civi 4.3+, delegate to CRM_Utils_File::findFiles()
  *
- * @param $dir string, base dir
- * @param $pattern string, glob pattern, eg "*.txt"
+ * @param string $dir base dir
+ * @param string $pattern , glob pattern, eg "*.txt"
+ *
  * @return array(string)
  */
 function _mailingwork_civix_find_files($dir, $pattern) {
-  if (is_callable(array('CRM_Utils_File', 'findFiles'))) {
+  if (is_callable(['CRM_Utils_File', 'findFiles'])) {
     return CRM_Utils_File::findFiles($dir, $pattern);
   }
 
-  $todos = array($dir);
-  $result = array();
+  $todos = [$dir];
+  $result = [];
   while (!empty($todos)) {
     $subdir = array_shift($todos);
     foreach (_mailingwork_civix_glob("$subdir/$pattern") as $match) {
@@ -298,14 +297,13 @@ function _mailingwork_civix_civicrm_caseTypes(&$caseTypes) {
     $name = preg_replace('/\.xml$/', '', basename($file));
     if ($name != CRM_Case_XMLProcessor::mungeCaseType($name)) {
       $errorMessage = sprintf("Case-type file name is malformed (%s vs %s)", $name, CRM_Case_XMLProcessor::mungeCaseType($name));
-      CRM_Core_Error::fatal($errorMessage);
-      // throw new CRM_Core_Exception($errorMessage);
+      throw new CRM_Core_Exception($errorMessage);
     }
-    $caseTypes[$name] = array(
+    $caseTypes[$name] = [
       'module' => E::LONG_NAME,
       'name' => $name,
       'file' => $file,
-    );
+    ];
   }
 }
 
@@ -335,6 +333,25 @@ function _mailingwork_civix_civicrm_angularModules(&$angularModules) {
 }
 
 /**
+ * (Delegated) Implements hook_civicrm_themes().
+ *
+ * Find any and return any files matching "*.theme.php"
+ */
+function _mailingwork_civix_civicrm_themes(&$themes) {
+  $files = _mailingwork_civix_glob(__DIR__ . '/*.theme.php');
+  foreach ($files as $file) {
+    $themeMeta = include $file;
+    if (empty($themeMeta['name'])) {
+      $themeMeta['name'] = preg_replace(':\.theme\.php$:', '', basename($file));
+    }
+    if (empty($themeMeta['ext'])) {
+      $themeMeta['ext'] = E::LONG_NAME;
+    }
+    $themes[$themeMeta['name']] = $themeMeta;
+  }
+}
+
+/**
  * Glob wrapper which is guaranteed to return an array.
  *
  * The documentation for glob() says, "On some systems it is impossible to
@@ -344,11 +361,12 @@ function _mailingwork_civix_civicrm_angularModules(&$angularModules) {
  *
  * @link http://php.net/glob
  * @param string $pattern
+ *
  * @return array, possibly empty
  */
 function _mailingwork_civix_glob($pattern) {
   $result = glob($pattern);
-  return is_array($result) ? $result : array();
+  return is_array($result) ? $result : [];
 }
 
 /**
@@ -359,16 +377,18 @@ function _mailingwork_civix_glob($pattern) {
  *    'Mailing', or 'Administer/System Settings'
  * @param array $item - the item to insert (parent/child attributes will be
  *    filled for you)
+ *
+ * @return bool
  */
 function _mailingwork_civix_insert_navigation_menu(&$menu, $path, $item) {
   // If we are done going down the path, insert menu
   if (empty($path)) {
-    $menu[] = array(
-      'attributes' => array_merge(array(
+    $menu[] = [
+      'attributes' => array_merge([
         'label'      => CRM_Utils_Array::value('name', $item),
         'active'     => 1,
-      ), $item),
-    );
+      ], $item),
+    ];
     return TRUE;
   }
   else {
@@ -379,9 +399,9 @@ function _mailingwork_civix_insert_navigation_menu(&$menu, $path, $item) {
     foreach ($menu as $key => &$entry) {
       if ($entry['attributes']['name'] == $first) {
         if (!isset($entry['child'])) {
-          $entry['child'] = array();
+          $entry['child'] = [];
         }
-        $found = _mailingwork_civix_insert_navigation_menu($entry['child'], implode('/', $path), $item, $key);
+        $found = _mailingwork_civix_insert_navigation_menu($entry['child'], implode('/', $path), $item);
       }
     }
     return $found;
@@ -392,7 +412,7 @@ function _mailingwork_civix_insert_navigation_menu(&$menu, $path, $item) {
  * (Delegated) Implements hook_civicrm_navigationMenu().
  */
 function _mailingwork_civix_navigationMenu(&$nodes) {
-  if (!is_callable(array('CRM_Core_BAO_Navigation', 'fixNavigationMenu'))) {
+  if (!is_callable(['CRM_Core_BAO_Navigation', 'fixNavigationMenu'])) {
     _mailingwork_civix_fixNavigationMenu($nodes);
   }
 }
@@ -452,23 +472,25 @@ function _mailingwork_civix_civicrm_alterSettingsFolders(&$metaDataFolders = NUL
  */
 function _mailingwork_civix_civicrm_entityTypes(&$entityTypes) {
   $entityTypes = array_merge($entityTypes, [
-    'CRM_Mailingwork_DAO_ActivityContactEmail' =>
-    [
+    'CRM_Mailingwork_DAO_ActivityContactEmail' => [
       'name' => 'ActivityContactEmail',
       'class' => 'CRM_Mailingwork_DAO_ActivityContactEmail',
       'table' => 'civicrm_activity_contact_email',
     ],
-    'CRM_Mailingwork_DAO_MailingworkFolder' =>
-    [
+    'CRM_Mailingwork_DAO_MailingworkFolder' => [
       'name' => 'MailingworkFolder',
       'class' => 'CRM_Mailingwork_DAO_MailingworkFolder',
       'table' => 'civicrm_mailingwork_folder',
     ],
-    'CRM_Mailingwork_DAO_MailingworkMailing' =>
-    [
+    'CRM_Mailingwork_DAO_MailingworkMailing' => [
       'name' => 'MailingworkMailing',
       'class' => 'CRM_Mailingwork_DAO_MailingworkMailing',
       'table' => 'civicrm_mailingwork_mailing',
+    ],
+    'CRM_Mailingwork_DAO_MailingworkOpening' => [
+      'name' => 'MailingworkOpening',
+      'class' => 'CRM_Mailingwork_DAO_MailingworkOpening',
+      'table' => 'civicrm_mailingwork_opening',
     ],
   ]);
 }
