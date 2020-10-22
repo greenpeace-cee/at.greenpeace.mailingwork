@@ -74,9 +74,9 @@ class CRM_Mailingwork_Processor_Greenpeace_Bounces extends CRM_Mailingwork_Proce
       }
 
       // TODO: refactor to use isSyncCompleted()
-      // standard mailings: sync fully completed 30 days after they've been sent
+      // standard/abtest mailings: sync fully completed 30 days after they've been sent
       if (
-        $type == 'standard' && ($status == 'done' || $status == 'cancelled') &&
+        ($type == 'standard' || $type == 'abtest') && ($status == 'done' || $status == 'cancelled') &&
         $result['success'] && $sending_date->diff(new DateTime())->days > 30
       ) {
         civicrm_api3('MailingworkMailing', 'create', [

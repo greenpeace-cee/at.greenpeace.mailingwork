@@ -276,7 +276,7 @@ class CRM_Mailingwork_Processor_Base {
     $sending_date = new \DateTime($mailing['sending_date']);
 
     if (
-      $type == 'standard' && ($status == 'done' || $status == 'cancelled') &&
+      ($type == 'standard' || $type == 'abtest') && ($status == 'done' || $status == 'cancelled') &&
       $sending_date->diff(new \DateTime())->days > $this->standardSyncDays
     ) {
       return TRUE;

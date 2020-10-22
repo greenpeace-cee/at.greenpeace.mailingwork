@@ -153,6 +153,20 @@ return [
   ],
   [
     'module'  => 'at.greenpeace.mailingwork',
+    'name'    => 'mailingwork_mailing_type_abtest',
+    'entity'  => 'OptionValue',
+    'cleanup' => 'never',
+    'params'  => [
+      'version'         => 3,
+      'option_group_id' => 'mailingwork_mailing_type',
+      'value'           => 4,
+      'name'            => 'abtest',
+      'label'           => 'A/B Test',
+      'is_active'       => 1,
+    ],
+  ],
+  [
+    'module'  => 'at.greenpeace.mailingwork',
     'name'    => 'mailingwork_mailing_sync_status_pending',
     'entity'  => 'OptionValue',
     'cleanup' => 'never',
