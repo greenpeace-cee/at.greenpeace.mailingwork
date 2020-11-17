@@ -167,6 +167,20 @@ return [
   ],
   [
     'module'  => 'at.greenpeace.mailingwork',
+    'name'    => 'mailingwork_mailing_type_abwinner',
+    'entity'  => 'OptionValue',
+    'cleanup' => 'never',
+    'params'  => [
+      'version'         => 3,
+      'option_group_id' => 'mailingwork_mailing_type',
+      'value'           => 5,
+      'name'            => 'abwinner',
+      'label'           => 'A/B Winner',
+      'is_active'       => 1,
+    ],
+  ],
+  [
+    'module'  => 'at.greenpeace.mailingwork',
     'name'    => 'mailingwork_mailing_sync_status_pending',
     'entity'  => 'OptionValue',
     'cleanup' => 'never',
