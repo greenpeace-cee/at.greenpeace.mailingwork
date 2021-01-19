@@ -7,9 +7,9 @@
  * extension.
  */
 class CRM_Mailingwork_ExtensionUtil {
-  const SHORT_NAME = "mailingwork";
-  const LONG_NAME = "at.greenpeace.mailingwork";
-  const CLASS_PREFIX = "CRM_Mailingwork";
+  const SHORT_NAME = 'mailingwork';
+  const LONG_NAME = 'at.greenpeace.mailingwork';
+  const CLASS_PREFIX = 'CRM_Mailingwork';
 
   /**
    * Translate a string using the extension's domain.
@@ -194,6 +194,8 @@ function _mailingwork_civix_civicrm_disable() {
  * @param $queue CRM_Queue_Queue, (for 'enqueue') the modifiable list of pending up upgrade tasks
  *
  * @return mixed
+ *   based on op. for 'check', returns array(boolean) (TRUE if upgrades are pending)
+ *   for 'enqueue', returns void
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_upgrade
  */
@@ -224,7 +226,7 @@ function _mailingwork_civix_upgrader() {
  * @param string $dir base dir
  * @param string $pattern , glob pattern, eg "*.txt"
  *
- * @return array(string)
+ * @return array
  */
 function _mailingwork_civix_find_files($dir, $pattern) {
   if (is_callable(['CRM_Utils_File', 'findFiles'])) {
@@ -243,7 +245,7 @@ function _mailingwork_civix_find_files($dir, $pattern) {
     if ($dh = opendir($subdir)) {
       while (FALSE !== ($entry = readdir($dh))) {
         $path = $subdir . DIRECTORY_SEPARATOR . $entry;
-        if ($entry{0} == '.') {
+        if ($entry[0] == '.') {
         }
         elseif (is_dir($path)) {
           $todos[] = $path;
@@ -362,7 +364,7 @@ function _mailingwork_civix_civicrm_themes(&$themes) {
  * @link http://php.net/glob
  * @param string $pattern
  *
- * @return array, possibly empty
+ * @return array
  */
 function _mailingwork_civix_glob($pattern) {
   $result = glob($pattern);
