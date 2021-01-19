@@ -36,7 +36,7 @@ class CRM_Mailingwork_Processor_Base {
   protected $fields = [];
 
   /**
-   * Required root properties that should be present in API responses
+   * Root properties in API responses
    *
    * @var array
    */
@@ -131,12 +131,9 @@ class CRM_Mailingwork_Processor_Base {
   protected function prepareRecipient($item) {
     $recipient = [];
     foreach ($this->rootProperties as $property) {
-      if (!property_exists($item, $property)) {
-        throw new CRM_Mailingwork_Processor_Exception(
-          'Property "' . $property . '" not set'
-        );
+      if (property_exists($item, $property)) {
+        $recipient[$property] = $item->$property;
       }
-      $recipient[$property] = $item->$property;
     }
     foreach ($item->fields as $field) {
       $fieldId = NULL;
@@ -216,11 +213,11 @@ class CRM_Mailingwork_Processor_Base {
       Civi::log()->warning('Cannot determine parent activity, no email given.');
       return NULL;
     }
-
     $query = CRM_Core_DAO::executeQuery("
       SELECT
         a.id AS activity_id,
-        ac.id AS activity_contact_id
+        ac.id AS activity_contact_id,
+        a.campaign_id
       FROM
         civicrm_activity a
       JOIN
@@ -257,8 +254,9 @@ class CRM_Mailingwork_Processor_Base {
       return NULL;
     }
     return [
-      'activity_id' => $query->activity_id,
-      'activity_contact_id' => $query->activity_contact_id
+      'activity_id'         => $query->activity_id,
+      'activity_contact_id' => $query->activity_contact_id,
+      'campaign_id'         => $query->campaign_id,
     ];
   }
 
