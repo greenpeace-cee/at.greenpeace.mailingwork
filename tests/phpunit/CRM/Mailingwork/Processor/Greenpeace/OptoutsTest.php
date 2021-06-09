@@ -260,12 +260,12 @@ class CRM_Mailingwork_Processor_Greenpeace_OptoutsTest extends \PHPUnit_Framewor
     $processor = new CRM_Mailingwork_Processor_Greenpeace_Folders([
       'username' => 'at.greenpeace.mailingwork',
       'password' => 'hunter2',
-    ], 'https://login.mailingwork.test/webservice/webservice/json/', $stack);
+    ], 'https://webservice.mailingwork.test/webservice/webservice/json/', $stack);
     $processor->import();
     $processor = new CRM_Mailingwork_Processor_Greenpeace_Mailings([
       'username' => 'at.greenpeace.mailingwork',
       'password' => 'hunter2',
-    ], 'https://login.mailingwork.test/webservice/webservice/json/', $stack);
+    ], 'https://webservice.mailingwork.test/webservice/webservice/json/', $stack);
     $processor->import(FALSE);
 
     // create dummy contacts
@@ -291,7 +291,7 @@ class CRM_Mailingwork_Processor_Greenpeace_OptoutsTest extends \PHPUnit_Framewor
       'username' => 'at.greenpeace.mailingwork',
       'password' => 'hunter2',
       'skip_mailing_sync' => TRUE
-    ], 'https://login.mailingwork.test/webservice/webservice/json/', $stack);
+    ], 'https://webservice.mailingwork.test/webservice/webservice/json/', $stack);
     $processor->import();
 
     $this->assertEquals(

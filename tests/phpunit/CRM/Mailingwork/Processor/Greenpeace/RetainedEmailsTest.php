@@ -66,7 +66,7 @@ class CRM_Mailingwork_Processor_Greenpeace_RetainedEmailsTest extends \PHPUnit_F
       'username'   => 'at.greenpeace.mailingwork',
       'password'   => 'hunter2',
       'soft_limit' => 0,
-    ], 'https://login.mailingwork.test/webservice/webservice/json/', $stack);
+    ], 'https://webservice.mailingwork.test/webservice/webservice/json/', $stack);
     $result = $processor->import();
     $this->assertEquals(3, $result['activities']);
     $this->assertEquals(3, $result['emails']);

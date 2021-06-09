@@ -51,7 +51,7 @@ class CRM_Mailingwork_Processor_Greenpeace_MailingsTest extends \PHPUnit_Framewo
     $processor = new CRM_Mailingwork_Processor_Greenpeace_Folders([
       'username' => 'at.greenpeace.mailingwork',
       'password' => 'hunter2',
-    ], 'https://login.mailingwork.test/webservice/webservice/json/', $stack);
+    ], 'https://webservice.mailingwork.test/webservice/webservice/json/', $stack);
     $processor->import();
 
     $processor = new CRM_Mailingwork_Processor_Greenpeace_Mailings([

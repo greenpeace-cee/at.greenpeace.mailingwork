@@ -45,7 +45,7 @@ class CRM_Mailingwork_Processor_Greenpeace_FoldersTest extends \PHPUnit_Framewor
     $processor = new CRM_Mailingwork_Processor_Greenpeace_Folders([
       'username' => 'at.greenpeace.mailingwork',
       'password' => 'hunter2',
-    ], 'https://login.mailingwork.test/webservice/webservice/json/', $stack);
+    ], 'https://webservice.mailingwork.test/webservice/webservice/json/', $stack);
     $result = $processor->import();
     // 6 folders in API response
     $this->assertEquals(6, $result['count']);
