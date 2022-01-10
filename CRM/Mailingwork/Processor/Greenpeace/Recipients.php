@@ -1,5 +1,7 @@
 <?php
 
+use Civi\Api4\MailingworkMailing;
+
 class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Processor_Base {
   private $sourceRecordTypeId = NULL;
   private $sourceContactId = NULL;
@@ -15,7 +17,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
     if (empty($this->params['mailingwork_mailing_id'])) {
       // fetch all mailings that haven't been fully synced yet
       $mailings = civicrm_api3('MailingworkMailing', 'get', [
-        'recipient_sync_status_id' => ['IN' => ['pending', 'in_progress']],
+        'recipient_sync_status_id' => ['IN' => ['pending', 'in_progress', 'retrying']],
         'api.MailingworkMailing.getcampaign' => [],
         'options'                  => ['limit' => 0],
       ]);
@@ -28,47 +30,59 @@ class CRM_Mailingwork_Processor_Greenpeace_Recipients extends CRM_Mailingwork_Pr
     }
     $recipient_count = 0;
     foreach ($mailings['values'] as $mailing) {
-      $type = CRM_Core_PseudoConstant::getName('CRM_Mailingwork_BAO_MailingworkMailing', 'type_id', $mailing['type_id']);
-      $status = CRM_Core_PseudoConstant::getName('CRM_Mailingwork_BAO_MailingworkMailing', 'status_id', $mailing['status_id']);
-      if ($status == 'drafted') {
-        continue;
-      }
-      Civi::log()->info("[Mailingwork/Recipients] Starting synchronization of mailing {$mailing['id']}/{$mailing['subject']}. Start Date: {$mailing['recipient_sync_date']}");
-      $sending_date = new DateTime($mailing['sending_date']);
-      $result = $this->importRecipients($mailing);
-      // we're caching activities per mailing, so flush once done with one
-      $this->activityCache = [];
-      $result['id'] = $mailing['id'];
-      Civi::log()->info("[Mailingwork/Recipients] Finished synchronization of mailing {$mailing['id']}/{$mailing['subject']}. Recipients: {$result['recipients']}, Activities: {$result['activities']}");
-      $import_results[] = $result;
-
-      if (!empty($result['date'])) {
-        $last_sending_date = new DateTime($result['date']);
-        // add one second to the recipient_sync_date so we avoid re-fetching
-        // the same recipients for large one-time mailings
-        $last_sending_date->add(new DateInterval('PT1S'));
-        civicrm_api3('MailingworkMailing', 'create', [
-          'id'                       => $mailing['id'],
-          'recipient_sync_date'      => $last_sending_date->format('Y-m-d H:i:s'),
-        ]);
-      }
-
-      // standard/ab* mailings: sync fully completed 30 days after they've been sent
-      if (
-        ($type == 'standard' || $type == 'abtest' || $type == 'abwinner') && ($status == 'done' || $status == 'cancelled') &&
-        $result['success'] && $sending_date->diff(new DateTime())->days > 30
-      ) {
-        civicrm_api3('MailingworkMailing', 'create', [
-          'id'                       => $mailing['id'],
-          'recipient_sync_status_id' => 'completed',
-        ]);
-      }
-
-      if (!empty($result['recipients'])) {
-        $recipient_count += $result['recipients'];
-        if ($this->params['soft_limit'] > 0 && $recipient_count >= $this->params['soft_limit']) {
-          break;
+      try {
+        $type = CRM_Core_PseudoConstant::getName('CRM_Mailingwork_BAO_MailingworkMailing', 'type_id', $mailing['type_id']);
+        $status = CRM_Core_PseudoConstant::getName('CRM_Mailingwork_BAO_MailingworkMailing', 'status_id', $mailing['status_id']);
+        if ($status == 'drafted') {
+          continue;
         }
+        Civi::log()
+          ->info("[Mailingwork/Recipients] Starting synchronization of mailing {$mailing['id']}/{$mailing['subject']}. Start Date: {$mailing['recipient_sync_date']}");
+        $sending_date = new DateTime($mailing['sending_date']);
+        $result = $this->importRecipients($mailing);
+        // we're caching activities per mailing, so flush once done with one
+        $this->activityCache = [];
+        $result['id'] = $mailing['id'];
+        Civi::log()
+          ->info("[Mailingwork/Recipients] Finished synchronization of mailing {$mailing['id']}/{$mailing['subject']}. Recipients: {$result['recipients']}, Activities: {$result['activities']}");
+        $import_results[] = $result;
+
+        if (!empty($result['date'])) {
+          $last_sending_date = new DateTime($result['date']);
+          // add one second to the recipient_sync_date so we avoid re-fetching
+          // the same recipients for large one-time mailings
+          $last_sending_date->add(new DateInterval('PT1S'));
+          civicrm_api3('MailingworkMailing', 'create', [
+            'id' => $mailing['id'],
+            'recipient_sync_date' => $last_sending_date->format('Y-m-d H:i:s'),
+          ]);
+        }
+
+        // standard/ab* mailings: sync fully completed 30 days after they've been sent
+        if (
+          ($type == 'standard' || $type == 'abtest' || $type == 'abwinner') && ($status == 'done' || $status == 'cancelled') &&
+          $result['success'] && $sending_date->diff(new DateTime())->days > 30
+        ) {
+          civicrm_api3('MailingworkMailing', 'create', [
+            'id' => $mailing['id'],
+            'recipient_sync_status_id' => 'completed',
+          ]);
+        }
+
+        if (!empty($result['recipients'])) {
+          $recipient_count += $result['recipients'];
+          if ($this->params['soft_limit'] > 0 && $recipient_count >= $this->params['soft_limit']) {
+            break;
+          }
+        }
+      }
+      catch (Exception $e) {
+        Civi::log()->error("[Mailingwork/Recipients] Synchronization of mailing {$mailing['id']}/{$mailing['subject']} failed. Error: {$e->getMessage()}");
+        $syncStatus = CRM_Core_PseudoConstant::getName('CRM_Mailingwork_BAO_MailingworkMailing', 'recipient_sync_status_id', $mailing['recipient_sync_status_id']);
+        MailingworkMailing::update(FALSE)
+          ->addWhere('id', '=', $mailing['id'])
+          ->addValue('recipient_sync_status_id:name', $syncStatus == 'retrying' ? 'failed' : 'retrying')
+          ->execute();
       }
     }
     return $import_results;

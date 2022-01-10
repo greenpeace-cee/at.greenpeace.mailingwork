@@ -1,5 +1,7 @@
 <?php
 
+use Civi\Api4\MailingworkMailing;
+
 class CRM_Mailingwork_Processor_Greenpeace_Bounces extends CRM_Mailingwork_Processor_Base {
 
   /**
@@ -32,7 +34,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Bounces extends CRM_Mailingwork_Proce
           'IN' => ['in_progress', 'completed'],
         ],
         'bounce_sync_status_id' => [
-          'IN' => ['pending', 'in_progress'],
+          'IN' => ['pending', 'in_progress', 'retrying'],
         ],
         'api.MailingworkMailing.getcampaign' => [],
         'options' => [
@@ -47,49 +49,60 @@ class CRM_Mailingwork_Processor_Greenpeace_Bounces extends CRM_Mailingwork_Proce
       ]);
     }
     foreach ($mailings['values'] as $mailing) {
-      $type = CRM_Core_PseudoConstant::getName(
-        'CRM_Mailingwork_BAO_MailingworkMailing',
-        'type_id',
-        $mailing['type_id']
-      );
-      $status = CRM_Core_PseudoConstant::getName(
-        'CRM_Mailingwork_BAO_MailingworkMailing',
-        'status_id',
-        $mailing['status_id']
-      );
-      $sending_date = new DateTime($mailing['sending_date']);
-      $result = $this->importBounces($mailing);
-      $result['id'] = $mailing['id'];
-      $import_results[] = $result;
-      Civi::log()->info("[Mailingwork/Bounces] Finished synchronization of mailing {$mailing['id']}/{$mailing['subject']}. Bounces: {$result['bounces']}, Activities: {$result['activities']}");
-      if (!empty($result['date'])) {
-        $last_bounce_date = new DateTime($result['date']);
-        // add one second to the bounce_sync_date so we avoid re-fetching
-        // the same bounces for large one-time mailings
-        $last_bounce_date->add(new DateInterval('PT1S'));
-        civicrm_api3('MailingworkMailing', 'create', [
-          'id'               => $mailing['id'],
-          'bounce_sync_date' => $last_bounce_date->format('Y-m-d H:i:s'),
-        ]);
-      }
-
-      // TODO: refactor to use isSyncCompleted()
-      // standard/ab* mailings: sync fully completed 30 days after they've been sent
-      if (
-        ($type == 'standard' || $type == 'abtest' || $type == 'abwinner') && ($status == 'done' || $status == 'cancelled') &&
-        $result['success'] && $sending_date->diff(new DateTime())->days > 30
-      ) {
-        civicrm_api3('MailingworkMailing', 'create', [
-          'id'                    => $mailing['id'],
-          'bounce_sync_status_id' => 'completed',
-        ]);
-      }
-
-      if (!empty($result['bounces'])) {
-        $bounce_count += $result['bounces'];
-        if ($this->params['soft_limit'] > 0 && $bounce_count >= $this->params['soft_limit']) {
-          break;
+      try {
+        $type = CRM_Core_PseudoConstant::getName(
+          'CRM_Mailingwork_BAO_MailingworkMailing',
+          'type_id',
+          $mailing['type_id']
+        );
+        $status = CRM_Core_PseudoConstant::getName(
+          'CRM_Mailingwork_BAO_MailingworkMailing',
+          'status_id',
+          $mailing['status_id']
+        );
+        $sending_date = new DateTime($mailing['sending_date']);
+        $result = $this->importBounces($mailing);
+        $result['id'] = $mailing['id'];
+        $import_results[] = $result;
+        Civi::log()
+          ->info("[Mailingwork/Bounces] Finished synchronization of mailing {$mailing['id']}/{$mailing['subject']}. Bounces: {$result['bounces']}, Activities: {$result['activities']}");
+        if (!empty($result['date'])) {
+          $last_bounce_date = new DateTime($result['date']);
+          // add one second to the bounce_sync_date so we avoid re-fetching
+          // the same bounces for large one-time mailings
+          $last_bounce_date->add(new DateInterval('PT1S'));
+          civicrm_api3('MailingworkMailing', 'create', [
+            'id' => $mailing['id'],
+            'bounce_sync_date' => $last_bounce_date->format('Y-m-d H:i:s'),
+          ]);
         }
+
+        // TODO: refactor to use isSyncCompleted()
+        // standard/ab* mailings: sync fully completed 30 days after they've been sent
+        if (
+          ($type == 'standard' || $type == 'abtest' || $type == 'abwinner') && ($status == 'done' || $status == 'cancelled') &&
+          $result['success'] && $sending_date->diff(new DateTime())->days > 30
+        ) {
+          civicrm_api3('MailingworkMailing', 'create', [
+            'id' => $mailing['id'],
+            'bounce_sync_status_id' => 'completed',
+          ]);
+        }
+
+        if (!empty($result['bounces'])) {
+          $bounce_count += $result['bounces'];
+          if ($this->params['soft_limit'] > 0 && $bounce_count >= $this->params['soft_limit']) {
+            break;
+          }
+        }
+      }
+      catch (Exception $e) {
+        Civi::log()->error("[Mailingwork/Bounces] Synchronization of mailing {$mailing['id']}/{$mailing['subject']} failed. Error: {$e->getMessage()}");
+        $syncStatus = CRM_Core_PseudoConstant::getName('CRM_Mailingwork_BAO_MailingworkMailing', 'bounce_sync_status_id', $mailing['bounce_sync_status_id']);
+        MailingworkMailing::update(FALSE)
+          ->addWhere('id', '=', $mailing['id'])
+          ->addValue('bounce_sync_status_id:name', $syncStatus == 'retrying' ? 'failed' : 'retrying')
+          ->execute();
       }
     }
     return $import_results;

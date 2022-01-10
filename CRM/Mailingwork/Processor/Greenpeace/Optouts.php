@@ -71,11 +71,10 @@ class CRM_Mailingwork_Processor_Greenpeace_Optouts extends CRM_Mailingwork_Proce
           Civi::log()->error('[Mailingwork/Optout] Unable to determine email for recipient ' . $optout['recipient']);
           continue;
         }
-        $contacts = Email::get()
+        $contacts = Email::get(FALSE)
           ->addSelect('contact_id')
           ->addWhere('email', '=', $optout[self::EMAIL_FIELD])
-          ->addWhere('contact.is_deleted', '=', FALSE)
-          ->setCheckPermissions(FALSE)
+          ->addWhere('contact_id.is_deleted', '=', FALSE)
           ->execute();
         // extract array of contact IDs
         $contacts = array_column((array) $contacts, 'contact_id');
@@ -134,7 +133,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Optouts extends CRM_Mailingwork_Proce
 
   private function removeGroups(array $contacts, array $groups_to_remove, array $optout, array $mailing = NULL) {
     $count = 0;
-    $groupContacts = GroupContact::get()
+    $groupContacts = GroupContact::get(FALSE)
       ->addWhere('contact_id', 'IN', $contacts)
       ->addWhere('group_id', 'IN', $groups_to_remove)
       ->addWhere('status', '=', 'Added')
@@ -142,7 +141,6 @@ class CRM_Mailingwork_Processor_Greenpeace_Optouts extends CRM_Mailingwork_Proce
         ->addWhere('id', '=', '$id')
         ->addValue('status', 'Removed')
       )*/
-      ->setCheckPermissions(FALSE)
       ->execute();
     foreach ($groupContacts as $groupContact) {
       $count++;
@@ -153,7 +151,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Optouts extends CRM_Mailingwork_Proce
       ]);
       // this could probably be performed as part of the chain, but activities in APIv4 are a bit unstable as of Civi 5.24
       $group_title = $this->groups[$groupContact['group_id']];
-      $activity = Activity::create()
+      $activity = Activity::create(FALSE)
         ->addValue('source_contact_id', CRM_Core_Session::singleton()->getLoggedInContactID())
         ->addValue('activity_type_id', CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'activity_type_id', 'Optout'))
         ->addValue('activity_date_time', $optout['date'])
@@ -168,7 +166,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Optouts extends CRM_Mailingwork_Proce
           'option_group_id' => 'optout_type',
           'name' => 'group',
         ]))
-        ->addValue('optout_information.optout_identifier', $mailing['id'])
+        ->addValue('optout_information.optout_identifier', $mailing['id'] ?? NULL)
         ->addValue('optout_information.optout_item', $optout[self::EMAIL_FIELD])
         ->addValue('subject', "Opt-Out from \"{$group_title}\" via Mailingwork")
         ->addValue('source_record_id', $groupContact['group_id'])
@@ -181,7 +179,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Optouts extends CRM_Mailingwork_Proce
       if (!is_null($mailing)) {
         $parent = $this->getParentActivity($groupContact['contact_id'], $optout, $mailing);
       }
-      $campaign_id = $mailing['campaign_id'];
+      $campaign_id = $mailing['campaign_id'] ?? NULL;
       if (!is_null($parent)) {
         $activity->addValue('activity_hierarchy.parent_activity_id', $parent['activity_id']);
         if (!empty($parent['campaign_id'])) {
@@ -203,14 +201,13 @@ class CRM_Mailingwork_Processor_Greenpeace_Optouts extends CRM_Mailingwork_Proce
 
   private function setSuppression(array $contacts, $suppression, array $optout, array $mailing = NULL) {
     $count = 0;
-    $suppressedContacts = Contact::get()
+    $suppressedContacts = Contact::get(FALSE)
       ->addWhere('id', 'IN', $contacts)
       ->addWhere($suppression, '=', 0)
       ->addChain('set_suppression', Contact::update()
         ->addWhere('id', '=', '$id')
         ->addValue($suppression, 1)
       )
-      ->setCheckPermissions(FALSE)
       ->execute();
     foreach ($suppressedContacts as $contact) {
       $count++;
@@ -220,7 +217,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Optouts extends CRM_Mailingwork_Proce
         'option_group_id' => 'optout_type',
         'name' => $suppression,
       ]);
-      $activity = Activity::create()
+      $activity = Activity::create(FALSE)
         ->addValue('source_contact_id', CRM_Core_Session::singleton()->getLoggedInContactID())
         ->addValue('activity_type_id', CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'activity_type_id', 'Optout'))
         ->addValue('activity_date_time', $optout['date'])

@@ -20,6 +20,12 @@
         <li>
           <strong>Completed:</strong> Synchronization has finished and no new items will be processed
         </li>
+        <li>
+          <strong>Retrying:</strong> The last synchronization attempt caused an error; synchronization will be retried.<br>
+        </li>
+        <li>
+          <strong>Failed:</strong> Synchronization encountered an error for two consecutive attempts and will no longer be attempted.<br>
+        </li>
       </ul>
     </dd>
     <dt>Campaign</dt>

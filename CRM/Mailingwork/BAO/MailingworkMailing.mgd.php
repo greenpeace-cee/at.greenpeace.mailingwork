@@ -221,4 +221,32 @@ return [
       'is_active'       => 1,
     ],
   ],
+  [
+    'module'  => 'at.greenpeace.mailingwork',
+    'name'    => 'mailingwork_mailing_sync_status_retrying',
+    'entity'  => 'OptionValue',
+    'cleanup' => 'never',
+    'params'  => [
+      'version'         => 3,
+      'option_group_id' => 'mailingwork_mailing_sync_status',
+      'value'           => 4,
+      'name'            => 'retrying',
+      'label'           => 'Retrying',
+      'is_active'       => 1,
+    ],
+  ],
+  [
+    'module'  => 'at.greenpeace.mailingwork',
+    'name'    => 'mailingwork_mailing_sync_status_failed',
+    'entity'  => 'OptionValue',
+    'cleanup' => 'never',
+    'params'  => [
+      'version'         => 3,
+      'option_group_id' => 'mailingwork_mailing_sync_status',
+      'value'           => 5,
+      'name'            => 'failed',
+      'label'           => 'Failed',
+      'is_active'       => 1,
+    ],
+  ],
 ];
