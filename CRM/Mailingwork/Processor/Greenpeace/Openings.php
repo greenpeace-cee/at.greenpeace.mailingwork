@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\MailingworkMailing;
 use Civi\Api4\MailingworkOpening;
 
 /**
@@ -36,7 +37,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Openings extends CRM_Mailingwork_Proc
       // imported as we attach openings to these activities.
       $mailings = civicrm_api3('MailingworkMailing', 'get', [
         'recipient_sync_status_id' => ['IN' => ['in_progress', 'completed']],
-        'opening_sync_status_id'   => ['IN' => ['pending', 'in_progress']],
+        'opening_sync_status_id'   => ['IN' => ['pending', 'in_progress', 'retrying']],
         'options'                  => ['limit' => 0],
       ]);
     }
@@ -48,20 +49,32 @@ class CRM_Mailingwork_Processor_Greenpeace_Openings extends CRM_Mailingwork_Proc
     $results = [];
     $opening_count = 0;
     foreach ($mailings['values'] as $id => $mailing) {
-      Civi::log()->info("[Mailingwork/Openings] Starting synchronization of mailing {$mailing['id']}/{$mailing['subject']}. Start Date: {$mailing['opening_sync_date']}");
-      $results[$id] = $this->importMailingOpenings($mailing);
-      if ($results[$id]['success'] && $this->isSyncCompleted($mailing)) {
-        civicrm_api3('MailingworkMailing', 'create', [
-          'id'                     => $mailing['id'],
-          'opening_sync_status_id' => 'completed',
-        ]);
-      }
-      Civi::log()->info("[Mailingwork/Openings] Finished synchronization of mailing {$mailing['id']}/{$mailing['subject']}. Openings: {$results[$id]['openings']}, Imported: {$results[$id]['imported_openings']}");
-      if (!empty($results[$id]['openings'])) {
-        $opening_count += $results[$id]['openings'];
-        if ($this->params['soft_limit'] > 0 && $opening_count >= $this->params['soft_limit']) {
-          break;
+      try {
+        Civi::log()
+          ->info("[Mailingwork/Openings] Starting synchronization of mailing {$mailing['id']}/{$mailing['subject']}. Start Date: {$mailing['opening_sync_date']}");
+        $results[$id] = $this->importMailingOpenings($mailing);
+        if ($results[$id]['success'] && $this->isSyncCompleted($mailing)) {
+          civicrm_api3('MailingworkMailing', 'create', [
+            'id' => $mailing['id'],
+            'opening_sync_status_id' => 'completed',
+          ]);
         }
+        Civi::log()
+          ->info("[Mailingwork/Openings] Finished synchronization of mailing {$mailing['id']}/{$mailing['subject']}. Openings: {$results[$id]['openings']}, Imported: {$results[$id]['imported_openings']}");
+        if (!empty($results[$id]['openings'])) {
+          $opening_count += $results[$id]['openings'];
+          if ($this->params['soft_limit'] > 0 && $opening_count >= $this->params['soft_limit']) {
+            break;
+          }
+        }
+      }
+      catch (Exception $e) {
+        Civi::log()->error("[Mailingwork/Openings] Synchronization of mailing {$mailing['id']}/{$mailing['subject']} failed. Error: {$e->getMessage()}");
+        $syncStatus = CRM_Core_PseudoConstant::getName('CRM_Mailingwork_BAO_MailingworkMailing', 'opening_sync_status_id', $mailing['opening_sync_status_id']);
+        MailingworkMailing::update(FALSE)
+          ->addWhere('id', '=', $mailing['id'])
+          ->addValue('opening_sync_status_id:name', $syncStatus == 'retrying' ? 'failed' : 'retrying')
+          ->execute();
       }
     }
 
