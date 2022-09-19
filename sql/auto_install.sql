@@ -19,6 +19,7 @@ SET FOREIGN_KEY_CHECKS=0;
 
 DROP TABLE IF EXISTS `civicrm_mailingwork_opening`;
 DROP TABLE IF EXISTS `civicrm_mailingwork_mailing`;
+DROP TABLE IF EXISTS `civicrm_mailingwork_interest`;
 DROP TABLE IF EXISTS `civicrm_mailingwork_folder`;
 DROP TABLE IF EXISTS `civicrm_activity_contact_email`;
 
@@ -58,6 +59,19 @@ CREATE TABLE `civicrm_mailingwork_folder` (
   UNIQUE INDEX `UI_mailingwork_identifier`(mailingwork_identifier),
   CONSTRAINT FK_civicrm_mailingwork_folder_parent_id FOREIGN KEY (`parent_id`) REFERENCES `civicrm_mailingwork_folder`(`id`) ON DELETE SET NULL,
   CONSTRAINT FK_civicrm_mailingwork_folder_campaign_id FOREIGN KEY (`campaign_id`) REFERENCES `civicrm_campaign`(`id`) ON DELETE SET NULL
+)
+ENGINE=InnoDB;
+
+-- /*******************************************************
+-- *
+-- * civicrm_mailingwork_interest
+-- *
+-- *******************************************************/
+CREATE TABLE `civicrm_mailingwork_interest` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'Unique MailingworkInterest ID',
+  `name` varchar(255) NULL COMMENT 'Name of the Interest',
+  `mailingwork_id` int unsigned NOT NULL COMMENT 'Unique Identifier used by Mailingwork',
+  PRIMARY KEY (`id`)
 )
 ENGINE=InnoDB;
 
