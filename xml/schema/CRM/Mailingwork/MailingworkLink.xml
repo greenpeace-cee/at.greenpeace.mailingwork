@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/Mailingwork</base>
+  <class>MailingworkLink</class>
+  <name>civicrm_mailingwork_link</name>
+  <comment></comment>
+  <log>true</log>
+
+  <field>
+    <name>id</name>
+    <title>Link ID</title>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Unique MailingworkLink ID</comment>
+    <html>
+      <type>Number</type>
+    </html>
+  </field>
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>true</autoincrement>
+  </primaryKey>
+
+  <field>
+    <name>url</name>
+    <title>URL</title>
+    <type>varchar</type>
+    <length>1023</length>
+    <required>false</required>
+    <comment>URL of the Link</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+
+  <field>
+    <name>mailingwork_id</name>
+    <title>Mailingwork ID</title>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Unique Identifier used by Mailingwork</comment>
+    <html>
+      <type>Number</type>
+    </html>
+  </field>
+
+  <field>
+    <name>mailing_id</name>
+    <title>Mailing ID</title>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>FK to MailingworkMailing</comment>
+    <html>
+      <type>Number</type>
+    </html>
+  </field>
+  <foreignKey>
+    <name>mailing_id</name>
+    <table>civicrm_mailingwork_mailing</table>
+    <key>id</key>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
+
+</table>

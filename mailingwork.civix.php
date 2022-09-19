@@ -320,6 +320,11 @@ function _mailingwork_civix_civicrm_entityTypes(&$entityTypes) {
       'class' => 'CRM_Mailingwork_DAO_MailingworkInterest',
       'table' => 'civicrm_mailingwork_interest',
     ],
+    'CRM_Mailingwork_DAO_MailingworkLink' => [
+      'name' => 'MailingworkLink',
+      'class' => 'CRM_Mailingwork_DAO_MailingworkLink',
+      'table' => 'civicrm_mailingwork_link',
+    ],
     'CRM_Mailingwork_DAO_MailingworkMailing' => [
       'name' => 'MailingworkMailing',
       'class' => 'CRM_Mailingwork_DAO_MailingworkMailing',
