@@ -17,6 +17,7 @@
 
 SET FOREIGN_KEY_CHECKS=0;
 
+DROP TABLE IF EXISTS `civicrm_mailingwork_click`;
 DROP TABLE IF EXISTS `civicrm_mailingwork_link_interest`;
 DROP TABLE IF EXISTS `civicrm_mailingwork_link`;
 DROP TABLE IF EXISTS `civicrm_mailingwork_opening`;
@@ -150,5 +151,21 @@ CREATE TABLE `civicrm_mailingwork_link_interest` (
   PRIMARY KEY (`id`),
   CONSTRAINT FK_civicrm_mailingwork_link_interest_link_id FOREIGN KEY (`link_id`) REFERENCES `civicrm_mailingwork_link`(`id`) ON DELETE CASCADE,
   CONSTRAINT FK_civicrm_mailingwork_link_interest_interest_id FOREIGN KEY (`interest_id`) REFERENCES `civicrm_mailingwork_interest`(`id`) ON DELETE CASCADE
+)
+ENGINE=InnoDB;
+
+-- /*******************************************************
+-- *
+-- * civicrm_mailingwork_click
+-- *
+-- *******************************************************/
+CREATE TABLE `civicrm_mailingwork_click` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'Unique MailingworkClick ID',
+  `click_date` datetime NULL COMMENT 'Date of the click',
+  `activity_contact_id` int unsigned NOT NULL COMMENT 'FK to ActivityContact',
+  `link_id` int unsigned NOT NULL COMMENT 'FK to MailingworkLink',
+  PRIMARY KEY (`id`),
+  CONSTRAINT FK_civicrm_mailingwork_click_activity_contact_id FOREIGN KEY (`activity_contact_id`) REFERENCES `civicrm_activity_contact`(`id`) ON DELETE CASCADE,
+  CONSTRAINT FK_civicrm_mailingwork_click_link_id FOREIGN KEY (`link_id`) REFERENCES `civicrm_mailingwork_link`(`id`) ON DELETE CASCADE
 )
 ENGINE=InnoDB;

@@ -310,6 +310,11 @@ function _mailingwork_civix_civicrm_entityTypes(&$entityTypes) {
       'class' => 'CRM_Mailingwork_DAO_ActivityContactEmail',
       'table' => 'civicrm_activity_contact_email',
     ],
+    'CRM_Mailingwork_DAO_MailingworkClick' => [
+      'name' => 'MailingworkClick',
+      'class' => 'CRM_Mailingwork_DAO_MailingworkClick',
+      'table' => 'civicrm_mailingwork_click',
+    ],
     'CRM_Mailingwork_DAO_MailingworkFolder' => [
       'name' => 'MailingworkFolder',
       'class' => 'CRM_Mailingwork_DAO_MailingworkFolder',

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/Mailingwork</base>
+  <class>MailingworkClick</class>
+  <name>civicrm_mailingwork_click</name>
+  <comment></comment>
+  <log>true</log>
+
+  <field>
+    <name>id</name>
+    <title>Click ID</title>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Unique MailingworkClick ID</comment>
+    <html>
+      <type>Number</type>
+    </html>
+  </field>
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>true</autoincrement>
+  </primaryKey>
+
+  <field>
+    <name>click_date</name>
+    <title>Click Date</title>
+    <type>datetime</type>
+    <required>false</required>
+    <comment>Date of the click</comment>
+    <html>
+      <type>Select Date</type>
+    </html>
+  </field>
+
+  <field>
+    <name>activity_contact_id</name>
+    <title>ActivityContact ID</title>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>FK to ActivityContact</comment>
+    <html>
+      <type>Number</type>
+    </html>
+  </field>
+  <foreignKey>
+    <name>activity_contact_id</name>
+    <table>civicrm_activity_contact</table>
+    <key>id</key>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
+
+  <field>
+    <name>link_id</name>
+    <title>MailingworkLink ID</title>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>FK to MailingworkLink</comment>
+    <html>
+      <type>Number</type>
+    </html>
+  </field>
+  <foreignKey>
+    <name>link_id</name>
+    <table>civicrm_mailingwork_link</table>
+    <key>id</key>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
+
+</table>
