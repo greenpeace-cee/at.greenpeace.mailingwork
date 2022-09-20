@@ -17,6 +17,7 @@
 
 SET FOREIGN_KEY_CHECKS=0;
 
+DROP TABLE IF EXISTS `civicrm_mailingwork_link_interest`;
 DROP TABLE IF EXISTS `civicrm_mailingwork_link`;
 DROP TABLE IF EXISTS `civicrm_mailingwork_opening`;
 DROP TABLE IF EXISTS `civicrm_mailingwork_mailing`;
@@ -131,8 +132,23 @@ CREATE TABLE `civicrm_mailingwork_link` (
   `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'Unique MailingworkLink ID',
   `url` varchar(1023) NULL COMMENT 'URL of the Link',
   `mailingwork_id` int unsigned NOT NULL COMMENT 'Unique Identifier used by Mailingwork',
-  `mailing_id` int unsigned NOT NULL COMMENT 'FK to MailinkworkMailing',
+  `mailing_id` int unsigned NOT NULL COMMENT 'FK to MailingworkMailing',
   PRIMARY KEY (`id`),
   CONSTRAINT FK_civicrm_mailingwork_link_mailing_id FOREIGN KEY (`mailing_id`) REFERENCES `civicrm_mailingwork_mailing`(`id`) ON DELETE CASCADE
+)
+ENGINE=InnoDB;
+
+-- /*******************************************************
+-- *
+-- * civicrm_mailingwork_link_interest
+-- *
+-- *******************************************************/
+CREATE TABLE `civicrm_mailingwork_link_interest` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'Unique MailingworkLinkInterest ID',
+  `link_id` int unsigned NOT NULL COMMENT 'FK to MailingworkLink',
+  `interest_id` int unsigned NOT NULL COMMENT 'FK to MailingworkInterest',
+  PRIMARY KEY (`id`),
+  CONSTRAINT FK_civicrm_mailingwork_link_interest_link_id FOREIGN KEY (`link_id`) REFERENCES `civicrm_mailingwork_link`(`id`) ON DELETE CASCADE,
+  CONSTRAINT FK_civicrm_mailingwork_link_interest_interest_id FOREIGN KEY (`interest_id`) REFERENCES `civicrm_mailingwork_interest`(`id`) ON DELETE CASCADE
 )
 ENGINE=InnoDB;
