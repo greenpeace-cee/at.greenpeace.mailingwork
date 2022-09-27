@@ -103,8 +103,12 @@ class CRM_Mailingwork_Processor_Greenpeace_ClicksTest
 
     $clicks = [
       [
-        'date'   => date('Y-m-d 07:00:00'),
-        'link'   => [ 'id' => $links['gp_energy']['id'] ],
+        'recipient' => 1111,
+        'date'      => date('Y-m-d 07:00:00'),
+        'link' => [
+          'id'  => $links['gp_energy']['id'],
+          'url' => $links['gp_energy']['url'],
+        ],
         'fields' => [
           [
             'id'    => self::$fieldDefinitions['Firstname']['id'],
@@ -117,8 +121,12 @@ class CRM_Mailingwork_Processor_Greenpeace_ClicksTest
         ],
       ],
       [
-        'date'   => date('Y-m-d 08:00:00'),
-        'link'   => [ 'id' => $links['li_ocean']['id'] ],
+        'recipient' => 2222,
+        'date'      => date('Y-m-d 08:00:00'),
+        'link' => [
+          'id'  => $links['li_ocean']['id'],
+          'url' => $links['li_ocean']['url'],
+        ],
         'fields' => [
           [
             'id'    => self::$fieldDefinitions['Firstname']['id'],
@@ -131,8 +139,12 @@ class CRM_Mailingwork_Processor_Greenpeace_ClicksTest
         ],
       ],
       [
-        'date'   => date('Y-m-d 09:00:00'),
-        'link'   => [ 'id' => $links['yt_ocean']['id'] ],
+        'recipient' => 3333,
+        'date'      => date('Y-m-d 09:00:00'),
+        'link' => [
+          'id'  => $links['yt_ocean']['id'],
+          'url' => $links['yt_ocean']['url'],
+        ],
         'fields' => [
           [
             'id'    => self::$fieldDefinitions['Firstname']['id'],
@@ -151,6 +163,18 @@ class CRM_Mailingwork_Processor_Greenpeace_ClicksTest
     $responses = [
       // -> GetFields
       new Response(200, [], self::wrapResponse(array_values(self::$fieldDefinitions))),
+
+      // -> GetLinksByEmailId for Mailing #2
+      new Response(200, [], self::wrapResponse([ $links['gp_energy'] ])),
+
+      // -> GetClicksByEmailId for Mailing #2
+      new Response(200, [], self::wrapResponse(array_slice($clicks, 0, 1))),
+
+      // -> GetLinksByEmailId for Mailing #3
+      new Response(200, [], self::wrapResponse([ $links['li_ocean'], $links['yt_ocean'] ])),
+
+      // -> GetClicksByEmailId for Mailing #3
+      new Response(200, [], self::wrapResponse(array_slice($clicks, 1, 2))),
     ];
 
     $mockHandler = new MockHandler($responses);
@@ -158,14 +182,14 @@ class CRM_Mailingwork_Processor_Greenpeace_ClicksTest
 
     // -- Assert there are no existing clicks/links/interests -- //
 
-    $interests = Api4\MailingworkInterest::get()->selectRowCount()->execute();
-    $this->assertEquals(0, $interests->count());
+    $interestsQuery = Api4\MailingworkInterest::get()->selectRowCount()->execute();
+    $this->assertEquals(0, $interestsQuery->count());
 
-    $links = Api4\MailingworkLink::get()->selectRowCount()->execute();
-    $this->assertEquals(0, $links->count());
+    $linksQuery = Api4\MailingworkLink::get()->selectRowCount()->execute();
+    $this->assertEquals(0, $linksQuery->count());
 
-    $clicks = Api4\MailingworkClick::get()->selectRowCount()->execute();
-    $this->assertEquals(0, $clicks->count());
+    $clicksQuery = Api4\MailingworkClick::get()->selectRowCount()->execute();
+    $this->assertEquals(0, $clicksQuery->count());
 
     // -- Import clicks -- //
 
@@ -183,29 +207,123 @@ class CRM_Mailingwork_Processor_Greenpeace_ClicksTest
 
     $importResults = $processor->import();
 
+    $this->assertEquals([
+      $this->mailings[1]['id'] => [
+        'click_count' => 1,
+        'date'        => $clicks[0]['date'],
+      ],
+      $this->mailings[2]['id'] => [
+        'click_count' => 2,
+        'date'        => $clicks[2]['date'],
+      ],
+    ], $importResults);
+
     // -- Assert clicks/links/interests have been imported -- //
 
-    $this->assertTrue(TRUE);
+    $linksQuery = Api4\MailingworkLink::get()
+      ->addSelect(
+        'mailing_id',
+        'mailingwork_id',
+        'mailingwork_interest.name',
+        'mailingwork_interest.mailingwork_id',
+        'url'
+      )
+      ->addJoin(
+        'MailingworkLinkInterest AS mailingwork_link_interest',
+        'LEFT',
+        ['id', '=', 'mailingwork_link_interest.link_id']
+      )
+      ->addJoin(
+        'MailingworkInterest AS mailingwork_interest',
+        'LEFT',
+        ['mailingwork_link_interest.interest_id', '=', 'mailingwork_interest.id']
+      )
+      ->addOrderBy('mailingwork_id', 'ASC')
+      ->execute();
+
+    $this->assertEquals(3, $linksQuery->count());
+
+    for ($i = 0; $i < count($linksQuery); $i++) {
+      $actual = $linksQuery[$i];
+      $expected = current($links);
+      $linkMailing = $this->mailings[$i < 1 ? 1 : 2];
+      $linkInterest = $interests[$i < 1 ? 'energy' : 'ocean' ];
+
+      $this->assertEquals([
+        'id'                                  => $actual['id'],
+        'mailing_id'                          => $linkMailing['id'],
+        'mailingwork_id'                      => $expected['id'],
+        'mailingwork_interest.mailingwork_id' => $linkInterest['id'],
+        'mailingwork_interest.name'           => $linkInterest['name'],
+        'url'                                 => $expected['url'],
+      ], $actual);
+
+      next($links);
+    }
+
+    $interestsQuery = Api4\MailingworkInterest::get()->execute();
+    $this->assertEquals(2, $interestsQuery->count());
+
+    $clicksQuery = Api4\MailingworkClick::get()
+      ->addOrderBy('click_date', 'ASC')
+      ->execute();
+
+    $this->assertEquals(3, $clicksQuery->count());
+
+    for ($i = 0; $i < count($clicksQuery); $i++) {
+      $actual = $clicksQuery[$i];
+      $targetContactID = self::getTargetContactID($actual['activity_contact_id']);
+      $expected = $clicks[$i];
+
+      $this->assertEquals([
+        'id'                  => $actual['id'],
+        'click_date'          => $expected['date'],
+        'activity_contact_id' => $actual['activity_contact_id'],
+        'link_id'             => $linksQuery[$i]['id'],
+      ], $actual);
+
+      $this->assertEquals($this->recipients[$i]['id'], $targetContactID);
+    }
+
+    // -- Assert mailings have been updated -- //
+
+    $mailing_2 = Api4\MailingworkMailing::get()
+      ->addSelect('click_sync_date', 'click_sync_status_id:name')
+      ->addWhere('id', '=', $this->mailings[1]['id'])
+      ->execute()
+      ->first();
+
+    $this->assertEquals([
+      'id' => $mailing_2['id'],
+      'click_sync_date' => $clicks[0]['date'],
+      'click_sync_status_id:name' => 'in_progress',
+    ], $mailing_2);
+
+    $mailing_3 = Api4\MailingworkMailing::get()
+      ->addSelect('click_sync_date', 'click_sync_status_id:name')
+      ->addWhere('id', '=', $this->mailings[2]['id'])
+      ->execute()
+      ->first();
+
+    $this->assertEquals([
+      'id' => $mailing_3['id'],
+      'click_sync_date' => $clicks[2]['date'],
+      'click_sync_status_id:name' => 'in_progress',
+    ], $mailing_3);
 
   }
 
   private function createMailingActivities() {
-    $customFields = [
-      'mailing_id'      => self::getCustomFieldID('email_information', 'mailing_id'),
-      'mailing_subject' => self::getCustomFieldID('email_information', 'mailing_subject'),
-      'mailing_type'    => self::getCustomFieldID('email_information', 'mailing_type'),
-    ];
-
     foreach ($this->mailings as $mailing) {
       foreach ($this->recipients as $recipient) {
         $activityParams = [
-          'activity_date_time'                         => date('Y-m-d 06:00:00'),
-          'activity_type_id:name'                      => 'Online_Mailing',
-          'custom_' . $customFields['mailing_id']      => $mailing['id'],
-          'custom_' . $customFields['mailing_subject'] => $mailing['subject'],
-          'custom_' . $customFields['mailing_type']    => $mailing['type_id'],
-          'source_contact_id'                          => 1,
-          'target_contact_id'                          => $recipient['id'],
+          'activity_date_time'                => date('Y-m-d 06:00:00'),
+          'activity_type_id:name'             => 'Online_Mailing',
+          'email_information.mailing_id'      => $mailing['id'],
+          'email_information.mailing_subject' => $mailing['subject'],
+          'email_information.mailing_type'    => $mailing['type_id'],
+          'source_contact_id'                 => 1,
+          'target_contact_id'                 => $recipient['id'],
         ];
 
         civicrm_api4('Activity', 'create', [ 'values' => $activityParams ]);
@@ -218,11 +336,11 @@ class CRM_Mailingwork_Processor_Greenpeace_ClicksTest
 
     foreach (range(1, 3) as $i) {
       $createMailingResult = Api4\MailingworkMailing::create()
-        ->addValue('click_sync_status_id',   $syncStatuses[$i - 1])
-        ->addValue('mailingwork_identifier', random_int(0, 999))
-        ->addValue('status_id',              'activated')
-        ->addValue('subject',                "Mailing #$i")
-        ->addValue('type_id',                'standard')
+        ->addValue('click_sync_status_id:name', $syncStatuses[$i - 1])
+        ->addValue('mailingwork_identifier',    random_int(0, 999))
+        ->addValue('status_id',                 'activated')
+        ->addValue('subject',                   "Mailing #$i")
+        ->addValue('type_id',                   'standard')
         ->execute();
 
       $this->mailings[] = $createMailingResult->first();
@@ -244,13 +362,15 @@ class CRM_Mailingwork_Processor_Greenpeace_ClicksTest
   }
 
   private static function createRequiredCustomGroups() {
+    $onlineMailingOptVal = self::getOptionValue('activity_type', 'Online_Mailing');
+
     Api4\CustomGroup::create()
-      ->addValue('extends',                       'Activity')
-      ->addValue('extends_entity_column_id:name', 'Online_Mailing')
-      ->addValue('is_active',                     TRUE)
-      ->addValue('name',                          'email_information')
-      ->addValue('table_name',                    'civicrm_value_email_information')
-      ->addValue('title',                         'Email Information')
+      ->addValue('extends',                     'Activity')
+      ->addValue('extends_entity_column_value', $onlineMailingOptVal)
+      ->addValue('is_active',                   TRUE)
+      ->addValue('name',                        'email_information')
+      ->addValue('table_name',                  'civicrm_value_email_information')
+      ->addValue('title',                       'Email Information')
       ->execute();
 
     Api4\CustomField::create()
@@ -259,7 +379,9 @@ class CRM_Mailingwork_Processor_Greenpeace_ClicksTest
       ->addValue('data_type',            'String')
       ->addValue('html_type',            'Text')
       ->addValue('is_active',            TRUE)
+      ->addValue('is_searchable',        TRUE)
       ->addValue('label',                'Mailing Description')
+      ->addValue('name',                 'mailing_description')
       ->execute();
 
     Api4\CustomField::create()
@@ -268,7 +390,9 @@ class CRM_Mailingwork_Processor_Greenpeace_ClicksTest
       ->addValue('data_type',            'String')
       ->addValue('html_type',            'Text')
       ->addValue('is_active',            TRUE)
+      ->addValue('is_searchable',        TRUE)
       ->addValue('label',                'Mailing ID')
+      ->addValue('name',                 'mailing_id')
       ->execute();
 
     Api4\CustomField::create()
@@ -277,7 +401,9 @@ class CRM_Mailingwork_Processor_Greenpeace_ClicksTest
       ->addValue('data_type',            'String')
       ->addValue('html_type',            'Text')
       ->addValue('is_active',            TRUE)
+      ->addValue('is_searchable',        TRUE)
       ->addValue('label',                'Mailing Subject')
+      ->addValue('name',                 'mailing_subject')
       ->execute();
 
     Api4\CustomField::create()
@@ -286,7 +412,9 @@ class CRM_Mailingwork_Processor_Greenpeace_ClicksTest
       ->addValue('data_type',            'Int')
       ->addValue('html_type',            'Select')
       ->addValue('is_active',            TRUE)
+      ->addValue('is_searchable',        TRUE)
       ->addValue('label',                'Mailing Type')
+      ->addValue('name',                 'mailing_type')
       ->addValue('option_group_id.name', 'mailing_type')
       ->execute();
   }
@@ -328,16 +456,6 @@ class CRM_Mailingwork_Processor_Greenpeace_ClicksTest
       ->execute();
   }
 
-  private static function getCustomFieldID(string $customGroup, string $name) {
-    return Api4\CustomField::get()
-      ->addSelect('id')
-      ->addWhere('custom_group_id:name', '=', $customGroup)
-      ->addWhere('name', '=', $name)
-      ->setLimit(1)
-      ->execute()
-      ->first()['id'];
-  }
-
   private static function getOptionValue(string $optionGroup, string $name) {
     return Api4\OptionValue::get()
       ->addSelect('value')
@@ -346,6 +464,16 @@ class CRM_Mailingwork_Processor_Greenpeace_ClicksTest
       ->setLimit(1)
       ->execute()
       ->first()['value'];
+  }
+
+  private static function getTargetContactID(int $activityContactID) {
+    return Api4\ActivityContact::get()
+      ->addSelect('contact_id')
+      ->addWhere('id',                  '=', $activityContactID)
+      ->addWhere('record_type_id:name', '=', 'Activity Targets')
+      ->setLimit(1)
+      ->execute()
+      ->first()['contact_id'];
   }
 
   private static function wrapResponse(array $result) {
