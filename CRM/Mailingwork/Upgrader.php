@@ -63,4 +63,60 @@ class CRM_Mailingwork_Upgrader extends CRM_Mailingwork_Upgrader_Base {
     return TRUE;
   }
 
+  public function upgrade_0120() {
+    $this->ctx->log->info('Applying update 0120');
+
+    // MailingworkInterest
+    CRM_Core_DAO::executeQuery("
+      CREATE TABLE `civicrm_mailingwork_interest` (
+        `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'Unique MailingworkInterest ID',
+        `name` varchar(255) NULL COMMENT 'Name of the Interest',
+        `mailingwork_id` int unsigned NOT NULL COMMENT 'Unique Identifier used by Mailingwork',
+        PRIMARY KEY (`id`)
+      )
+    ");
+
+    // MailingworkLink
+    CRM_Core_DAO::executeQuery("
+      CREATE TABLE `civicrm_mailingwork_link` (
+        `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'Unique MailingworkLink ID',
+        `url` varchar(1023) NULL COMMENT 'URL of the Link',
+        `mailingwork_id` int unsigned NOT NULL COMMENT 'Unique Identifier used by Mailingwork',
+        `mailing_id` int unsigned NOT NULL COMMENT 'FK to MailingworkMailing',
+        PRIMARY KEY (`id`),
+        CONSTRAINT FK_civicrm_mailingwork_link_mailing_id FOREIGN KEY (`mailing_id`) REFERENCES `civicrm_mailingwork_mailing`(`id`) ON DELETE CASCADE
+      )
+    ");
+
+    // MailingworkLinkInterest
+    CRM_Core_DAO::executeQuery("
+      CREATE TABLE `civicrm_mailingwork_link_interest` (
+        `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'Unique MailingworkLinkInterest ID',
+        `link_id` int unsigned NOT NULL COMMENT 'FK to MailingworkLink',
+        `interest_id` int unsigned NOT NULL COMMENT 'FK to MailingworkInterest',
+        PRIMARY KEY (`id`),
+        CONSTRAINT FK_civicrm_mailingwork_link_interest_link_id FOREIGN KEY (`link_id`) REFERENCES `civicrm_mailingwork_link`(`id`) ON DELETE CASCADE,
+        CONSTRAINT FK_civicrm_mailingwork_link_interest_interest_id FOREIGN KEY (`interest_id`) REFERENCES `civicrm_mailingwork_interest`(`id`) ON DELETE CASCADE
+      )
+    ");
+
+    // MailingworkClick
+    CRM_Core_DAO::executeQuery("
+      CREATE TABLE `civicrm_mailingwork_click` (
+        `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'Unique MailingworkClick ID',
+        `click_date` datetime NULL COMMENT 'Date of the click',
+        `activity_contact_id` int unsigned NOT NULL COMMENT 'FK to ActivityContact',
+        `link_id` int unsigned NOT NULL COMMENT 'FK to MailingworkLink',
+        PRIMARY KEY (`id`),
+        CONSTRAINT FK_civicrm_mailingwork_click_activity_contact_id FOREIGN KEY (`activity_contact_id`) REFERENCES `civicrm_activity_contact`(`id`) ON DELETE CASCADE,
+        CONSTRAINT FK_civicrm_mailingwork_click_link_id FOREIGN KEY (`link_id`) REFERENCES `civicrm_mailingwork_link`(`id`) ON DELETE CASCADE
+      )
+    ");
+
+    $logging = new CRM_Logging_Schema();
+    $logging->fixSchemaDifferences();
+
+    return TRUE;
+  }
+
 }
