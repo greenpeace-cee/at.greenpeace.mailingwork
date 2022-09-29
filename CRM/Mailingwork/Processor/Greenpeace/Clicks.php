@@ -29,6 +29,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
       ->addWhere('click_sync_status_id', 'IN', [
         $this->getOrCreateOptionValue('mailingwork_mailing_sync_status', 'pending'),
         $this->getOrCreateOptionValue('mailingwork_mailing_sync_status', 'in_progress'),
+        $this->getOrCreateOptionValue('mailingwork_mailing_sync_status', 'retrying'),
       ]);
 
     if (isset($this->params['mailingwork_mailing_id'])) {
