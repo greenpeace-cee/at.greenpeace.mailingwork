@@ -42,7 +42,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
     $result = [];
 
     foreach ($mailings as $mailing) {
-      $this->importMailingLinks($mailing['id']);
+      $this->importMailingLinks($mailing);
       $result[$mailing['id']] = $this->importMailingClicks($mailing);
     }
 
@@ -131,32 +131,32 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
     ];
   }
 
-  private function importMailingLinks($mailingID) {
+  private function importMailingLinks($mailing) {
     $links = $this->client->request('getLinksByEmailId', [
-      'emailId' => $mailingID,
+      'emailId' => $mailing['mailingwork_identifier'],
     ]);
 
     foreach ($links as $link) {
 
       $linksQuery = Api4\MailingworkLink::get()
         ->addSelect('id')
-        ->addWhere('mailing_id',     '=', $mailingID)
+        ->addWhere('mailing_id',     '=', $mailing['id'])
         ->addWhere('mailingwork_id', '=', $link->id)
         ->setLimit(1)
         ->execute();
   
       if ($linksQuery->count() < 1) {
         $createdLink = Api4\MailingworkLink::create()
-          ->addValue('mailing_id', $mailingID)
+          ->addValue('mailing_id', $mailing['id'])
           ->addValue('mailingwork_id', $link->id)
           ->addValue('url', $link->url)
           ->execute()
           ->first();
   
-        $this->links[$mailingID][$link->id] = $createdLink['id'];
+        $this->links[$mailing['id']][$link->id] = $createdLink['id'];
         self::importLinkInterests($createdLink['id'], $link->interests);
       } else {
-        $this->links[$mailingID][$link->id] = $linksQuery->first()['id'];
+        $this->links[$mailing['id']][$link->id] = $linksQuery->first()['id'];
       }
     }
   }
