@@ -31,7 +31,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
     ];
 
     $mailingQuery = Api4\MailingworkMailing::get()
-      ->addSelect('*')
+      ->addSelect('*', 'click_sync_status_id:name')
       ->addWhere('recipient_sync_status_id', 'IN', [
         $syncStatuses['pending'],
         $syncStatuses['in_progress'],
@@ -53,8 +53,28 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
     $result = [];
 
     foreach ($mailings as $mailing) {
-      $this->importMailingLinks($mailing);
-      $result[$mailing['id']] = $this->importMailingClicks($mailing);
+      $mailingID = $mailing['id'];
+      $subject = $mailing['subject'];
+
+      try {
+        Civi::log()->info("[Mailingwork/Clicks] Starting synchronization for mailing $mailingID/$subject");
+
+        $this->importMailingLinks($mailing);
+        $result[$mailingID] = $this->importMailingClicks($mailing);
+
+        $clickCount = $result[$mailingID]['click_count'];
+        Civi::log()->info("[Mailingwork/Clicks] Finished synchronization for mailing $mailingID/$subject. Imported $clickCount");
+      } catch (Exception $exc) {
+        $errMsg = $exc->getMessage();
+        Civi::log()->error("[Mailingwork/Clicks] Synchronization of mailing $mailingID/$subject failed. Error: $errMsg");
+
+        $newClickSyncStatus = $mailing['click_sync_status_id:name'] === 'retrying' ? 'failed' : 'retrying';
+
+        Api4\MailingworkMailing::update(FALSE)
+          ->addWhere('id', '=', $mailingID)
+          ->addValue('click_sync_status_id:name', $newClickSyncStatus)
+          ->execute();
+      }
     }
 
     return $result;
