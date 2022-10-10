@@ -101,7 +101,10 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
   }
 
   private function getClicks($mwMailingID, $startDate) {
+    $fields = array_search(self::EMAIL_FIELD, $this->fields) . ',' .
+      array_search('Contact_ID', $this->fields);
     return $this->client->api('click')->getClicksByEmailId($mwMailingID, [
+      'fieldId'   => $fields,
       'limit'     => self::IMPORT_LIMIT,
       'passDate'  => 1,
       'passLink'  => 1,
@@ -125,25 +128,35 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
     try {
       while (TRUE) {
         $clicks = $this->getClicks($mailing['mailingwork_identifier'], $startDate);
-  
+
         foreach ($clicks as $click) {
           $this->resolveResponseFields($click);
           $contactID = $this->resolveContactId($click->fields);
+          if (empty($contactID)) {
+            if (!empty($recipient['Contact_ID'])) {
+              Civi::log()->info('[Mailingwork/Clicks] Unable to identify contact: ' . $click['Contact_ID']);
+            }
+            continue;
+          }
           $activityContactID = self::getActivityContactID($mailing['id'], $contactID);
+          if (is_null($activityContactID)) {
+            Civi::log()->warning('[Mailingwork/Clicks] Ignoring click without matching activity');
+            continue;
+          }
           $linkID = $this->links[$mailing['id']][$click->link->id];
-    
+
           Api4\MailingworkClick::create()
             ->addValue('activity_contact_id', $activityContactID)
             ->addValue('click_date',          $click->date)
             ->addValue('link_id',             $linkID)
             ->execute();
-    
+
           $lastClickDate = $click->date;
           $totalCount++;
         }
 
         if (count($clicks) < self::IMPORT_LIMIT) break;
-  
+
         $startDate = $lastClickDate;
       }
     } catch (Exception $exc) {
@@ -175,7 +188,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
         ->addWhere('mailingwork_id', '=', $link->id)
         ->setLimit(1)
         ->execute();
-  
+
       if ($linksQuery->count() < 1) {
         $createdLink = Api4\MailingworkLink::create()
           ->addValue('mailing_id', $mailing['id'])
@@ -183,7 +196,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
           ->addValue('url', $link->url)
           ->execute()
           ->first();
-  
+
         $this->links[$mailing['id']][$link->id] = $createdLink['id'];
         self::importLinkInterests($createdLink['id'], $link->interests);
       } else {
