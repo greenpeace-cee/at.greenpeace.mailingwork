@@ -162,10 +162,10 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
       $errorMessage = "[Mailingwork/Clicks] Exception: {$exc->getMessage()}";
       Civi::log()->error($errorMessage, (array) $exc);
       throw $exc;
-    } finally {
-      if (isset($lastClickDate)) {
-        self::updateMailingClickSyncStatus($mailing['id'], $lastClickDate);
-      }
+    }
+
+    if (isset($lastClickDate)) {
+      self::updateMailingClickSyncStatus($mailing['id'], $lastClickDate);
     }
 
     return [
