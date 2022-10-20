@@ -148,11 +148,15 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
 
         $linkID = $this->links[$mailing['id']][$click->link->id];
 
-        Api4\MailingworkClick::create()
-          ->addValue('activity_contact_id', $activityContactID)
-          ->addValue('click_date',          $click->date)
-          ->addValue('link_id',             $linkID)
-          ->execute();
+        if (self::isDuplicateClick($click->date, $activityContactID, $linkID)) {
+          Civi::log()->info('[Mailingwork/Clicks] Found click with existing MailingworkClick, skipping');
+        } else {
+          Api4\MailingworkClick::create()
+            ->addValue('activity_contact_id', $activityContactID)
+            ->addValue('click_date',          $click->date)
+            ->addValue('link_id',             $linkID)
+            ->execute();
+        }
 
         $lastClickDate = max($click->date, $lastClickDate);
         $totalCount++;
@@ -279,6 +283,17 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
       ->addValue('click_sync_status_id:name', 'completed')
       ->addWhere('id', '=', $mailingID)
       ->execute();
+  }
+
+  private static function isDuplicateClick($clickDate, $activityContactID, $linkID) {
+    $count = Api4\MailingworkClick::get()
+      ->addWhere('activity_contact_id', '=', $activityContactID)
+      ->addWhere('click_date',          '=', $clickDate)
+      ->addWhere('link_id',             '=', $linkID)
+      ->execute()
+      ->rowCount;
+
+    return $count > 0;
   }
 
 }
