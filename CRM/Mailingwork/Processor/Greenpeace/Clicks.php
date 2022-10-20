@@ -4,8 +4,6 @@ use Civi\Api4;
 
 class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Processor_Base {
 
-  const IMPORT_LIMIT = 1000;
-
   private $links = [];
 
   /**
@@ -105,7 +103,6 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
       array_search('Contact_ID', $this->fields);
     return $this->client->api('click')->getClicksByEmailId($mwMailingID, [
       'fieldId'   => $fields,
-      'limit'     => self::IMPORT_LIMIT,
       'passDate'  => 1,
       'passLink'  => 1,
       'startDate' => $startDate,
@@ -126,39 +123,41 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
     $totalCount = 0;
 
     try {
-      while (TRUE) {
-        $clicks = $this->getClicks($mailing['mailingwork_identifier'], $startDate);
+      $clicks = $this->getClicks($mailing['mailingwork_identifier'], $startDate);
 
-        foreach ($clicks as $click) {
-          $this->resolveResponseFields($click);
-          $contactID = $this->resolveContactId($click->fields);
-          if (empty($contactID)) {
-            if (!empty($recipient['Contact_ID'])) {
-              Civi::log()->info('[Mailingwork/Clicks] Unable to identify contact: ' . $click['Contact_ID']);
-            }
-            continue;
-          }
-          $activityContactID = self::getActivityContactID($mailing['id'], $contactID);
-          if (is_null($activityContactID)) {
-            Civi::log()->warning('[Mailingwork/Clicks] Ignoring click without matching activity');
-            continue;
-          }
-          $linkID = $this->links[$mailing['id']][$click->link->id];
+      foreach ($clicks as $click) {
+        $this->resolveResponseFields($click);
+        $contactID = $this->resolveContactId($click->fields);
 
-          Api4\MailingworkClick::create()
-            ->addValue('activity_contact_id', $activityContactID)
-            ->addValue('click_date',          $click->date)
-            ->addValue('link_id',             $linkID)
-            ->execute();
+        if (empty($contactID)) {
+          $clickContactID = $click->fields['Contact_ID'];
 
-          $lastClickDate = max($click->date, $lastClickDate);
-          $totalCount++;
+          if (empty($clickContactID)) continue;
+
+          Civi::log()->info("[Mailingwork/Clicks] Unable to identify contact: $clickContactID");
+          continue;
         }
 
-        if (count($clicks) < self::IMPORT_LIMIT) break;
+        $activityContactID = self::getActivityContactID($mailing['id'], $contactID);
 
-        $startDate = $lastClickDate;
+        if (is_null($activityContactID)) {
+          Civi::log()->warning('[Mailingwork/Clicks] Ignoring click without matching activity');
+          continue;
+        }
+
+        $linkID = $this->links[$mailing['id']][$click->link->id];
+
+        Api4\MailingworkClick::create()
+          ->addValue('activity_contact_id', $activityContactID)
+          ->addValue('click_date',          $click->date)
+          ->addValue('link_id',             $linkID)
+          ->execute();
+
+        $lastClickDate = max($click->date, $lastClickDate);
+        $totalCount++;
       }
+
+      $startDate = $lastClickDate;
     } catch (Exception $exc) {
       $errorMessage = "[Mailingwork/Clicks] Exception: {$exc->getMessage()}";
       Civi::log()->error($errorMessage, (array) $exc);
