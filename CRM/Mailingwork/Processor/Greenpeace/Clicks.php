@@ -5,6 +5,7 @@ use Civi\Api4;
 class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Processor_Base {
 
   private $links = [];
+  protected $standardSyncDays = 90;
 
   /**
    * Fetch and process clicks
@@ -168,6 +169,10 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
       self::updateMailingClickSyncStatus($mailing['id'], $lastClickDate);
     }
 
+    if ($this->isSyncCompleted($mailing)) {
+      self::setMailingClicksCompleted($mailing['id']);
+    }
+
     return [
       'click_count' => $totalCount,
       'date'        => $lastClickDate,
@@ -266,6 +271,13 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
       ->addWhere('id', '=', $mailingID)
       ->addValue('click_sync_date',      $lastClickDate)
       ->addValue('click_sync_status_id', $statusInProgress)
+      ->execute();
+  }
+
+  private static function setMailingClicksCompleted($mailingID) {
+    Api4\MailingworkMailing::update()
+      ->addValue('click_sync_status_id:name', 'completed')
+      ->addWhere('id', '=', $mailingID)
       ->execute();
   }
 
