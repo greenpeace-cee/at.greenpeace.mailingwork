@@ -151,7 +151,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
             ->addValue('link_id',             $linkID)
             ->execute();
 
-          $lastClickDate = $click->date;
+          $lastClickDate = max($click->date, $lastClickDate);
           $totalCount++;
         }
 
