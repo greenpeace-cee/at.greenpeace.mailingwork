@@ -184,9 +184,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
   }
 
   private function importMailingLinks($mailing) {
-    $links = $this->client->request('getLinksByEmailId', [
-      'emailId' => $mailing['mailingwork_identifier'],
-    ]);
+    $links = $this->client->api('link')->getLinksByEmailId($mailing['mailingwork_identifier']);
 
     foreach ($links as $link) {
 
