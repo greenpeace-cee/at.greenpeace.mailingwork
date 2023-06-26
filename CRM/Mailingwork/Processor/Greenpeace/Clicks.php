@@ -27,13 +27,14 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
       'in_progress' => $this->getOrCreateOptionValue('mailingwork_mailing_sync_status', 'in_progress'),
       'pending'     => $this->getOrCreateOptionValue('mailingwork_mailing_sync_status', 'pending'),
       'retrying'    => $this->getOrCreateOptionValue('mailingwork_mailing_sync_status', 'retrying'),
+      'completed'    => $this->getOrCreateOptionValue('mailingwork_mailing_sync_status', 'completed'),
     ];
 
     $mailingQuery = Api4\MailingworkMailing::get()
       ->addSelect('*', 'click_sync_status_id:name')
       ->addWhere('recipient_sync_status_id', 'IN', [
-        $syncStatuses['pending'],
         $syncStatuses['in_progress'],
+        $syncStatuses['completed'],
       ])
       ->addWhere('click_sync_status_id', 'IN', [
         $syncStatuses['pending'],
