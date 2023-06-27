@@ -15,8 +15,12 @@
 
 SET FOREIGN_KEY_CHECKS=0;
 
+DROP TABLE IF EXISTS `civicrm_mailingwork_click`;
+DROP TABLE IF EXISTS `civicrm_mailingwork_link_interest`;
+DROP TABLE IF EXISTS `civicrm_mailingwork_link`;
 DROP TABLE IF EXISTS `civicrm_mailingwork_opening`;
 DROP TABLE IF EXISTS `civicrm_mailingwork_mailing`;
+DROP TABLE IF EXISTS `civicrm_mailingwork_interest`;
 DROP TABLE IF EXISTS `civicrm_mailingwork_folder`;
 DROP TABLE IF EXISTS `civicrm_activity_contact_email`;
 

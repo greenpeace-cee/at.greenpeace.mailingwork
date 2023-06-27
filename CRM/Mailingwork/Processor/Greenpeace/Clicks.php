@@ -1,13 +1,11 @@
 <?php
 
-/**
- * Warning: WIP!
- *
- * @todo DRY up code (Bounces/Clicks/Openings/Recipients)
- *
- * Class CRM_Mailingwork_Processor_Greenpeace_Clicks
- */
+use Civi\Api4;
+
 class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Processor_Base {
+
+  private $links = [];
+  protected $standardSyncDays = 90;
 
   /**
    * Fetch and process clicks
@@ -16,29 +14,101 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
    * @throws \Exception
    */
   public function import() {
-    $this->preloadFields();
+
+    // -- Sync mailings -- //
+
     if (empty($this->params['skip_mailing_sync'])) {
-      // sync mailings first
       $this->importMailings();
     }
-    if (empty($this->params['mailingwork_mailing_id'])) {
-      // fetch all mailings that haven't been fully synced yet
-      $mailings = civicrm_api3('MailingworkMailing', 'get', [
-        'recipient_sync_status_id' => ['IN' => ['pending', 'in_progress']],
-        'options'                  => ['limit' => 0],
+
+    // -- Select mailings -- //
+
+    $syncStatuses = [
+      'in_progress' => $this->getOrCreateOptionValue('mailingwork_mailing_sync_status', 'in_progress'),
+      'pending'     => $this->getOrCreateOptionValue('mailingwork_mailing_sync_status', 'pending'),
+      'retrying'    => $this->getOrCreateOptionValue('mailingwork_mailing_sync_status', 'retrying'),
+      'completed'    => $this->getOrCreateOptionValue('mailingwork_mailing_sync_status', 'completed'),
+    ];
+
+    $mailingQuery = Api4\MailingworkMailing::get()
+      ->addSelect('*', 'click_sync_status_id:name')
+      ->addWhere('recipient_sync_status_id', 'IN', [
+        $syncStatuses['in_progress'],
+        $syncStatuses['completed'],
+      ])
+      ->addWhere('click_sync_status_id', 'IN', [
+        $syncStatuses['pending'],
+        $syncStatuses['in_progress'],
+        $syncStatuses['retrying'],
       ]);
-    }
-    else {
-      $mailings = civicrm_api3('MailingworkMailing', 'get', [
-        'id' => $this->params['mailingwork_mailing_id'],
-      ]);
-    }
-    $results = [];
-    foreach ($mailings['values'] as $id => $mailing) {
-      $result[$id] = $this->importMailingClicks($mailing);
+
+    if (isset($this->params['mailingwork_mailing_id'])) {
+      $mailingQuery->addWhere('id', '=', $this->params['mailingwork_mailing_id']);
     }
 
-    return $results;
+    $mailings = $mailingQuery->execute();
+
+    // -- Import clicks -- //
+
+    $result = [];
+
+    foreach ($mailings as $mailing) {
+      $mailingID = $mailing['id'];
+      $subject = $mailing['subject'];
+
+      try {
+        Civi::log()->info("[Mailingwork/Clicks] Starting synchronization for mailing $mailingID/$subject");
+
+        $this->importMailingLinks($mailing);
+        $result[$mailingID] = $this->importMailingClicks($mailing);
+
+        $clickCount = $result[$mailingID]['click_count'];
+        Civi::log()->info("[Mailingwork/Clicks] Finished synchronization for mailing $mailingID/$subject. Imported $clickCount");
+      } catch (Exception $exc) {
+        $errMsg = $exc->getMessage();
+        Civi::log()->error("[Mailingwork/Clicks] Synchronization of mailing $mailingID/$subject failed. Error: $errMsg");
+
+        $newClickSyncStatus = $mailing['click_sync_status_id:name'] === 'retrying' ? 'failed' : 'retrying';
+
+        Api4\MailingworkMailing::update(FALSE)
+          ->addWhere('id', '=', $mailingID)
+          ->addValue('click_sync_status_id:name', $newClickSyncStatus)
+          ->execute();
+      }
+    }
+
+    return $result;
+
+  }
+
+  private function getActivityContactID(int $mailingID, int $contactID) {
+    $activityTargetOptValue = $this->getOrCreateOptionValue('activity_contacts', 'Activity Targets');
+
+    $activityQuery = Api4\Activity::get()
+      ->addSelect('activity_contact.id')
+      ->addJoin(
+        'ActivityContact AS activity_contact', 'INNER', ['id', '=', 'activity_contact.activity_id']
+      )
+      ->addWhere('activity_contact.contact_id',     '=', $contactID)
+      ->addWhere('activity_contact.record_type_id', '=', $activityTargetOptValue)
+      ->addWhere('activity_type_id:name',           '=', 'Online_Mailing')
+      ->addWhere('email_information.mailing_id',    '=', $mailingID)
+      ->addOrderBy('activity_date_time', 'DESC')
+      ->setLimit(1)
+      ->execute();
+
+    return $activityQuery->first()['activity_contact.id'];
+  }
+
+  private function getClicks($mwMailingID, $startDate) {
+    $fields = array_search(self::EMAIL_FIELD, $this->fields) . ',' .
+      array_search('Contact_ID', $this->fields);
+    return $this->client->api('click')->getClicksByEmailId($mwMailingID, [
+      'fieldId'   => $fields,
+      'passDate'  => 1,
+      'passLink'  => 1,
+      'startDate' => $startDate,
+    ]);
   }
 
   /**
@@ -49,167 +119,180 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
    * @return array
    * @throws \Exception
    */
-  private function importMailingClicks($mailing) {
-    $start_date = NULL;
-    if (!empty($mailing['click_sync_date'])) {
-      $start_date = $mailing['click_sync_date'];
-    }
-    $last_click_date = $start_date;
-    $start = 0;
-    $limit = 1000;
-    $more_pages = TRUE;
-    $last_sending_date = NULL;
-    $total_count = 0;
+  private function importMailingClicks(array $mailing) {
+    $startDate = $mailing['click_sync_date'] ?? NULL;
+    $lastClickDate = $startDate;
+    $totalCount = 0;
+
     try {
-      while ($more_pages) {
-        $clicks = $this->client->api('click')->getClicksByEmailId(
-          $mailing['mailingwork_identifier'],
-          [
-            'startDate' => $start_date,
-            'start'     => $start,
-            'limit'     => $limit,
-            'passDate'  => 1,
-          ]
-        );
-        $count = count($clicks);
-        $start += $count;
-        if ($count < $limit) {
-          $more_pages = FALSE;
+      $clicks = $this->getClicks($mailing['mailingwork_identifier'], $startDate);
+
+      foreach ($clicks as $click) {
+        $this->resolveResponseFields($click);
+        $contactID = $this->resolveContactId($click->fields);
+
+        if (empty($contactID)) {
+          $clickContactID = $click->fields['Contact_ID'];
+
+          if (empty($clickContactID)) continue;
+
+          Civi::log()->info("[Mailingwork/Clicks] Unable to identify contact: $clickContactID");
+          continue;
         }
-        foreach ($clicks as $click) {
-          $click = $this->prepareRecipient($click);
-          $contact_id = $this->resolveContactId($click);
-          if (empty($contact_id)) {
-            Civi::log()->info('[Mailingwork/Clicks] Unable to identify contact: ' . $click['Contact_ID']);
-            continue;
-          }
-          if (empty($click[self::EMAIL_FIELD])) {
-            // we'd really like an email, but we can continue without if needed ...
-            Civi::log()->warning('[Mailingwork/Clicks] Unable to determine email for recipient ' . $click['recipient']);
-          }
-          $activity = $this->createActivity($contact_id, $click);
-          if (!is_null($activity)) {
-            $last_click_date = $click['date'];
-            $total_count++;
-          }
+
+        $activityContactID = self::getActivityContactID($mailing['id'], $contactID);
+
+        if (is_null($activityContactID)) {
+          Civi::log()->warning('[Mailingwork/Clicks] Ignoring click without matching activity');
+          continue;
         }
+
+        $linkID = $this->links[$mailing['id']][$click->link->id];
+
+        if (self::isDuplicateClick($click->date, $activityContactID, $linkID)) {
+          Civi::log()->info('[Mailingwork/Clicks] Found click with existing MailingworkClick, skipping');
+        } else {
+          Api4\MailingworkClick::create()
+            ->addValue('activity_contact_id', $activityContactID)
+            ->addValue('click_date',          $click->date)
+            ->addValue('link_id',             $linkID)
+            ->execute();
+        }
+
+        $lastClickDate = max($click->date, $lastClickDate);
+        $totalCount++;
       }
+
+      $startDate = $lastClickDate;
+    } catch (Exception $exc) {
+      $errorMessage = "[Mailingwork/Clicks] Exception: {$exc->getMessage()}";
+      Civi::log()->error($errorMessage, (array) $exc);
+      throw $exc;
     }
-    catch (Exception $e) {
-      Civi::log()->error("[Mailingwork/Clicks] Exception: {$e->getMessage()}", (array) $e);
-      throw $e;
-    } finally {
-      if (!empty($last_click_date)) {
-        // TODO: update click_sync_date
-      }
+
+    if (isset($lastClickDate)) {
+      self::updateMailingClickSyncStatus($mailing['id'], $lastClickDate);
+    }
+
+    if ($this->isSyncCompleted($mailing)) {
+      self::setMailingClicksCompleted($mailing['id']);
     }
 
     return [
-      'click_count' => $total_count,
-      'date'          => $last_click_date,
+      'click_count' => $totalCount,
+      'date'        => $lastClickDate,
     ];
   }
 
-  /**
-   * Get parent Online_Mailing activity for matching contact, email and mailing ID
-   *
-   * @param $contact_id
-   * @param $clickData
-   *
-   * @return array|null
-   * @throws \CiviCRM_API3_Exception
-   */
-  protected function getParentActivity($contact_id, $clickData) {
-    $email_provider_field = 'custom_' . CRM_Core_BAO_CustomField::getCustomFieldID(
-      'email_provider',
-      'email_information'
-    );
-    $mailing_id_field = 'custom_' . CRM_Core_BAO_CustomField::getCustomFieldID(
-      'mailing_id',
-      'email_information'
-    );
+  private function importMailingLinks($mailing) {
+    $links = $this->client->api('link')->getLinksByEmailId($mailing['mailingwork_identifier']);
 
-    $email_field = 'custom_' . CRM_Core_BAO_CustomField::getCustomFieldID(
-      'email',
-      'email_information'
-    );
+    foreach ($links as $link) {
 
-    $result = civicrm_api3('Activity', 'get', [
-      'activity_type_id'    => 'Online_Mailing',
-      $email_field          => $clickData[self::EMAIL_FIELD],
-      $email_provider_field => self::PROVIDER_NAME,
-      $mailing_id_field     => $clickData['email'],
-      'target_contact_id'   => $contact_id,
-      'return'              => ['id', 'campaign_id', 'subject'],
-    ]);
+      $linksQuery = Api4\MailingworkLink::get()
+        ->addSelect('id')
+        ->addWhere('mailing_id',     '=', $mailing['id'])
+        ->addWhere('mailingwork_id', '=', $link->id)
+        ->setLimit(1)
+        ->execute();
 
-    if ($result['count'] > 1) {
-      Civi::log()->warning('[Mailingwork/Clicks] Ambiguous parent activity for recipient ' . $clickData['recipient']);
+      if ($linksQuery->count() < 1) {
+        $createdLink = Api4\MailingworkLink::create()
+          ->addValue('mailing_id', $mailing['id'])
+          ->addValue('mailingwork_id', $link->id)
+          ->addValue('url', $link->url)
+          ->execute()
+          ->first();
+
+        $this->links[$mailing['id']][$link->id] = $createdLink['id'];
+        self::importLinkInterests($createdLink['id'], $link->interests);
+      } else {
+        $this->links[$mailing['id']][$link->id] = $linksQuery->first()['id'];
+      }
     }
-    if ($result['count'] != 1) {
-      return NULL;
-    }
-    // return first activity
-    return reset($result['values']);
   }
 
-  /**
-   * Create an Click activity
-   *
-   * @param int $contact_id
-   * @param $clickData
-   *
-   * @todo define activity/custom field structure
-   *
-   * @return array Activity
-   * @throws \CiviCRM_API3_Exception
-   */
-  protected function createActivity($contact_id, $clickData) {
-    $parent_field = 'custom_' . CRM_Core_BAO_CustomField::getCustomFieldID(
-      'parent_activity_id',
-      'activity_hierarchy'
-    );
-    $email_provider_field = 'custom_' . CRM_Core_BAO_CustomField::getCustomFieldID(
-      'email_provider',
-      'click_information'
-    );
-    $email_field = 'custom_' . CRM_Core_BAO_CustomField::getCustomFieldID(
-      'email',
-      'click_information'
-    );
+  private function importLinkInterests(int $linkID, array $interests) {
+    foreach ($interests as $interest) {
+      $linkInterestsQuery = Api4\MailingworkLinkInterest::get()
+        ->addJoin(
+          'MailingworkInterest AS mailingwork_interest',
+          'LEFT',
+          ['interest_id', '=', 'mailingwork_interest.id']
+        )
+        ->addWhere('link_id',                             '=', $linkID)
+        ->addWhere('mailingwork_interest.mailingwork_id', '=', $interest->id)
+        ->setLimit(1)
+        ->execute();
 
-    $params = [
-      'target_id'           => $contact_id,
-      'activity_type_id'    => 'Click',
-      'medium_id'           => 'email',
-      'status_id'           => 'Completed',
-      'subject'             => 'Click',
-      $email_field          => $clickData[self::EMAIL_FIELD],
-      $email_provider_field => self::PROVIDER_NAME,
-    ];
+      if ($linkInterestsQuery->count() > 0) continue;
 
-    $parent = $this->getParentActivity($contact_id, $clickData);
-    if (!is_null($parent)) {
-      $params['campaign_id'] = $parent['campaign_id'];
-      $params[$parent_field] = $parent['id'];
-      $params['subject'] = "{$params['subject']} - {$parent['subject']}";
+      $interestsQuery = Api4\MailingworkInterest::get()
+        ->addSelect('id')
+        ->addWhere('mailingwork_id', '=', $interest->id)
+        ->setLimit(1)
+        ->execute();
+
+      $interestExists = $interestsQuery->count() > 0;
+      $interestID = $interestExists ? $interestsQuery->first()['id'] : NULL;
+
+      if (!$interestExists) {
+        $createdInterest = Api4\MailingworkInterest::create()
+          ->addValue('mailingwork_id', $interest->id)
+          ->addValue('name',           $interest->name)
+          ->execute()
+          ->first();
+
+        $interestID = $createdInterest['id'];
+      }
+
+      $createLinkInterestResult = Api4\MailingworkLinkInterest::create()
+        ->addValue('interest_id', $interestID)
+        ->addValue('link_id',     $linkID)
+        ->execute();
+    }
+  }
+
+  private function resolveResponseFields(&$click) {
+    $resolvedFields = [];
+
+    foreach ($click->fields as $index => $field) {
+      $fieldName = $this->fields[$field->id];
+      $resolvedFields[$fieldName] = $field->value;
     }
 
-    $dupes = civicrm_api3(
-      'Activity',
-      'getcount',
-      $params
-    );
-    if ($dupes > 0) {
-      // Activity already exists
-      return NULL;
-    }
+    $click->fields = $resolvedFields;
+  }
 
-    return civicrm_api3(
-      'Activity',
-      'create',
-      $params
+  private function updateMailingClickSyncStatus(int $mailingID, string $lastClickDate) {
+    $statusInProgress = $this->getOrCreateOptionValue(
+      'mailingwork_mailing_sync_status',
+      'in_progress'
     );
+
+    Api4\MailingworkMailing::update()
+      ->addWhere('id', '=', $mailingID)
+      ->addValue('click_sync_date',      $lastClickDate)
+      ->addValue('click_sync_status_id', $statusInProgress)
+      ->execute();
+  }
+
+  private static function setMailingClicksCompleted($mailingID) {
+    Api4\MailingworkMailing::update()
+      ->addValue('click_sync_status_id:name', 'completed')
+      ->addWhere('id', '=', $mailingID)
+      ->execute();
+  }
+
+  private static function isDuplicateClick($clickDate, $activityContactID, $linkID) {
+    $count = Api4\MailingworkClick::get()
+      ->addWhere('activity_contact_id', '=', $activityContactID)
+      ->addWhere('click_date',          '=', $clickDate)
+      ->addWhere('link_id',             '=', $linkID)
+      ->execute()
+      ->rowCount;
+
+    return $count > 0;
   }
 
 }

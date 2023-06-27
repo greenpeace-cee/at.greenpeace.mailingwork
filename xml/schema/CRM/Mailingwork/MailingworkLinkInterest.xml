@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/Mailingwork</base>
+  <class>MailingworkLinkInterest</class>
+  <name>civicrm_mailingwork_link_interest</name>
+  <comment></comment>
+  <log>true</log>
+
+  <field>
+    <name>id</name>
+    <title>LinkInterest ID</title>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Unique MailingworkLinkInterest ID</comment>
+    <html>
+      <type>Number</type>
+    </html>
+  </field>
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>true</autoincrement>
+  </primaryKey>
+
+  <field>
+    <name>link_id</name>
+    <title>Link ID</title>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>FK to MailingworkLink</comment>
+    <html>
+      <type>Number</type>
+    </html>
+  </field>
+  <foreignKey>
+    <name>link_id</name>
+    <table>civicrm_mailingwork_link</table>
+    <key>id</key>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
+
+  <field>
+    <name>interest_id</name>
+    <title>Interest ID</title>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>FK to MailingworkInterest</comment>
+    <html>
+      <type>Number</type>
+    </html>
+  </field>
+  <foreignKey>
+    <name>interest_id</name>
+    <table>civicrm_mailingwork_interest</table>
+    <key>id</key>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
+
+</table>

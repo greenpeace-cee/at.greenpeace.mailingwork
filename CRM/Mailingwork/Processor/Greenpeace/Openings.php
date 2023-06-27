@@ -162,7 +162,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Openings extends CRM_Mailingwork_Proc
           ));
         }
         $apiOpening->execute();
-        $last_opening_date = $opening['date'];
+        $last_opening_date = max($opening['date'], $last_opening_date);
       }
     }
     catch (Exception $e) {

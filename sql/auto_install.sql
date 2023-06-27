@@ -17,8 +17,12 @@
 
 SET FOREIGN_KEY_CHECKS=0;
 
+DROP TABLE IF EXISTS `civicrm_mailingwork_click`;
+DROP TABLE IF EXISTS `civicrm_mailingwork_link_interest`;
+DROP TABLE IF EXISTS `civicrm_mailingwork_link`;
 DROP TABLE IF EXISTS `civicrm_mailingwork_opening`;
 DROP TABLE IF EXISTS `civicrm_mailingwork_mailing`;
+DROP TABLE IF EXISTS `civicrm_mailingwork_interest`;
 DROP TABLE IF EXISTS `civicrm_mailingwork_folder`;
 DROP TABLE IF EXISTS `civicrm_activity_contact_email`;
 
@@ -58,6 +62,19 @@ CREATE TABLE `civicrm_mailingwork_folder` (
   UNIQUE INDEX `UI_mailingwork_identifier`(mailingwork_identifier),
   CONSTRAINT FK_civicrm_mailingwork_folder_parent_id FOREIGN KEY (`parent_id`) REFERENCES `civicrm_mailingwork_folder`(`id`) ON DELETE SET NULL,
   CONSTRAINT FK_civicrm_mailingwork_folder_campaign_id FOREIGN KEY (`campaign_id`) REFERENCES `civicrm_campaign`(`id`) ON DELETE SET NULL
+)
+ENGINE=InnoDB;
+
+-- /*******************************************************
+-- *
+-- * civicrm_mailingwork_interest
+-- *
+-- *******************************************************/
+CREATE TABLE `civicrm_mailingwork_interest` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'Unique MailingworkInterest ID',
+  `name` varchar(255) NULL COMMENT 'Name of the Interest',
+  `mailingwork_id` int unsigned NOT NULL COMMENT 'Unique Identifier used by Mailingwork',
+  PRIMARY KEY (`id`)
 )
 ENGINE=InnoDB;
 
@@ -104,5 +121,51 @@ CREATE TABLE `civicrm_mailingwork_opening` (
   `user_agent_id` int unsigned NULL DEFAULT 1 COMMENT 'ID of user agent',
   PRIMARY KEY (`id`),
   CONSTRAINT FK_civicrm_mailingwork_opening_activity_contact_id FOREIGN KEY (`activity_contact_id`) REFERENCES `civicrm_activity_contact`(`id`) ON DELETE CASCADE
+)
+ENGINE=InnoDB;
+
+-- /*******************************************************
+-- *
+-- * civicrm_mailingwork_link
+-- *
+-- *******************************************************/
+CREATE TABLE `civicrm_mailingwork_link` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'Unique MailingworkLink ID',
+  `url` varchar(1023) NULL COMMENT 'URL of the Link',
+  `mailingwork_id` int unsigned NOT NULL COMMENT 'Unique Identifier used by Mailingwork',
+  `mailing_id` int unsigned NOT NULL COMMENT 'FK to MailingworkMailing',
+  PRIMARY KEY (`id`),
+  CONSTRAINT FK_civicrm_mailingwork_link_mailing_id FOREIGN KEY (`mailing_id`) REFERENCES `civicrm_mailingwork_mailing`(`id`) ON DELETE CASCADE
+)
+ENGINE=InnoDB;
+
+-- /*******************************************************
+-- *
+-- * civicrm_mailingwork_link_interest
+-- *
+-- *******************************************************/
+CREATE TABLE `civicrm_mailingwork_link_interest` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'Unique MailingworkLinkInterest ID',
+  `link_id` int unsigned NOT NULL COMMENT 'FK to MailingworkLink',
+  `interest_id` int unsigned NOT NULL COMMENT 'FK to MailingworkInterest',
+  PRIMARY KEY (`id`),
+  CONSTRAINT FK_civicrm_mailingwork_link_interest_link_id FOREIGN KEY (`link_id`) REFERENCES `civicrm_mailingwork_link`(`id`) ON DELETE CASCADE,
+  CONSTRAINT FK_civicrm_mailingwork_link_interest_interest_id FOREIGN KEY (`interest_id`) REFERENCES `civicrm_mailingwork_interest`(`id`) ON DELETE CASCADE
+)
+ENGINE=InnoDB;
+
+-- /*******************************************************
+-- *
+-- * civicrm_mailingwork_click
+-- *
+-- *******************************************************/
+CREATE TABLE `civicrm_mailingwork_click` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'Unique MailingworkClick ID',
+  `click_date` datetime NULL COMMENT 'Date of the click',
+  `activity_contact_id` int unsigned NOT NULL COMMENT 'FK to ActivityContact',
+  `link_id` int unsigned NOT NULL COMMENT 'FK to MailingworkLink',
+  PRIMARY KEY (`id`),
+  CONSTRAINT FK_civicrm_mailingwork_click_activity_contact_id FOREIGN KEY (`activity_contact_id`) REFERENCES `civicrm_activity_contact`(`id`) ON DELETE CASCADE,
+  CONSTRAINT FK_civicrm_mailingwork_click_link_id FOREIGN KEY (`link_id`) REFERENCES `civicrm_mailingwork_link`(`id`) ON DELETE CASCADE
 )
 ENGINE=InnoDB;
