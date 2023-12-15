@@ -8,7 +8,7 @@
     the campaign of the parent folder (if set).
   </p>
   <p>
-    Note: Mailings may override the campaign setting by using [CIVICAMPAIGN:XXXX] (where XXXX is the campaign ID) in
+    Note: Mailings may override the campaign setting by using [CIVICAMPAIGN=XXXX] (where XXXX is the campaign ID) in
     their description.
   </p>
 </div>
