@@ -3,7 +3,7 @@
 /**
  * Collection of upgrade steps.
  */
-class CRM_Mailingwork_Upgrader extends CRM_Mailingwork_Upgrader_Base {
+class CRM_Mailingwork_Upgrader extends CRM_Extension_Upgrader_Base {
 
   /**
    * Add a column to a table if it doesn't already exist
