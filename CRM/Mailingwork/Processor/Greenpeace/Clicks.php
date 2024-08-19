@@ -30,7 +30,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
       'completed'    => $this->getOrCreateOptionValue('mailingwork_mailing_sync_status', 'completed'),
     ];
 
-    $mailingQuery = Api4\MailingworkMailing::get()
+    $mailingQuery = Api4\MailingworkMailing::get(FALSE)
       ->addSelect('*', 'click_sync_status_id:name')
       ->addWhere('recipient_sync_status_id', 'IN', [
         $syncStatuses['in_progress'],
@@ -84,7 +84,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
   private function getActivityContactID(int $mailingID, int $contactID) {
     $activityTargetOptValue = $this->getOrCreateOptionValue('activity_contacts', 'Activity Targets');
 
-    $activityQuery = Api4\Activity::get()
+    $activityQuery = Api4\Activity::get(FALSE)
       ->addSelect('activity_contact.id')
       ->addJoin(
         'ActivityContact AS activity_contact', 'INNER', ['id', '=', 'activity_contact.activity_id']
@@ -152,7 +152,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
         if (self::isDuplicateClick($click->date, $activityContactID, $linkID)) {
           Civi::log()->info('[Mailingwork/Clicks] Found click with existing MailingworkClick, skipping');
         } else {
-          Api4\MailingworkClick::create()
+          Api4\MailingworkClick::create(FALSE)
             ->addValue('activity_contact_id', $activityContactID)
             ->addValue('click_date',          $click->date)
             ->addValue('link_id',             $linkID)
@@ -189,7 +189,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
 
     foreach ($links as $link) {
 
-      $linksQuery = Api4\MailingworkLink::get()
+      $linksQuery = Api4\MailingworkLink::get(FALSE)
         ->addSelect('id')
         ->addWhere('mailing_id',     '=', $mailing['id'])
         ->addWhere('mailingwork_id', '=', $link->id)
@@ -197,7 +197,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
         ->execute();
 
       if ($linksQuery->count() < 1) {
-        $createdLink = Api4\MailingworkLink::create()
+        $createdLink = Api4\MailingworkLink::create(FALSE)
           ->addValue('mailing_id', $mailing['id'])
           ->addValue('mailingwork_id', $link->id)
           ->addValue('url', $link->url)
@@ -214,7 +214,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
 
   private function importLinkInterests(int $linkID, array $interests) {
     foreach ($interests as $interest) {
-      $linkInterestsQuery = Api4\MailingworkLinkInterest::get()
+      $linkInterestsQuery = Api4\MailingworkLinkInterest::get(FALSE)
         ->addJoin(
           'MailingworkInterest AS mailingwork_interest',
           'LEFT',
@@ -227,7 +227,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
 
       if ($linkInterestsQuery->count() > 0) continue;
 
-      $interestsQuery = Api4\MailingworkInterest::get()
+      $interestsQuery = Api4\MailingworkInterest::get(FALSE)
         ->addSelect('id')
         ->addWhere('mailingwork_id', '=', $interest->id)
         ->setLimit(1)
@@ -237,7 +237,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
       $interestID = $interestExists ? $interestsQuery->first()['id'] : NULL;
 
       if (!$interestExists) {
-        $createdInterest = Api4\MailingworkInterest::create()
+        $createdInterest = Api4\MailingworkInterest::create(FALSE)
           ->addValue('mailingwork_id', $interest->id)
           ->addValue('name',           $interest->name)
           ->execute()
@@ -246,7 +246,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
         $interestID = $createdInterest['id'];
       }
 
-      $createLinkInterestResult = Api4\MailingworkLinkInterest::create()
+      $createLinkInterestResult = Api4\MailingworkLinkInterest::create(FALSE)
         ->addValue('interest_id', $interestID)
         ->addValue('link_id',     $linkID)
         ->execute();
@@ -270,7 +270,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
       'in_progress'
     );
 
-    Api4\MailingworkMailing::update()
+    Api4\MailingworkMailing::update(FALSE)
       ->addWhere('id', '=', $mailingID)
       ->addValue('click_sync_date',      $lastClickDate)
       ->addValue('click_sync_status_id', $statusInProgress)
@@ -278,14 +278,14 @@ class CRM_Mailingwork_Processor_Greenpeace_Clicks extends CRM_Mailingwork_Proces
   }
 
   private static function setMailingClicksCompleted($mailingID) {
-    Api4\MailingworkMailing::update()
+    Api4\MailingworkMailing::update(FALSE)
       ->addValue('click_sync_status_id:name', 'completed')
       ->addWhere('id', '=', $mailingID)
       ->execute();
   }
 
   private static function isDuplicateClick($clickDate, $activityContactID, $linkID) {
-    $count = Api4\MailingworkClick::get()
+    $count = Api4\MailingworkClick::get(FALSE)
       ->addWhere('activity_contact_id', '=', $activityContactID)
       ->addWhere('click_date',          '=', $clickDate)
       ->addWhere('link_id',             '=', $linkID)

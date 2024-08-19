@@ -170,7 +170,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Optouts extends CRM_Mailingwork_Proce
         ->addValue('optout_information.optout_item', $optout[self::EMAIL_FIELD])
         ->addValue('subject', "Opt-Out from \"{$group_title}\" via Mailingwork")
         ->addValue('source_record_id', $groupContact['group_id'])
-        ->addChain('activity_contact', ActivityContact::create()
+        ->addChain('activity_contact', ActivityContact::create(FALSE)
           ->addValue('activity_id', '$id')
           ->addValue('contact_id', $groupContact['contact_id'])
           ->addValue('record_type_id', 3)
@@ -204,7 +204,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Optouts extends CRM_Mailingwork_Proce
     $suppressedContacts = Contact::get(FALSE)
       ->addWhere('id', 'IN', $contacts)
       ->addWhere($suppression, '=', 0)
-      ->addChain('set_suppression', Contact::update()
+      ->addChain('set_suppression', Contact::update(FALSE)
         ->addWhere('id', '=', '$id')
         ->addValue($suppression, 1)
       )
@@ -235,7 +235,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Optouts extends CRM_Mailingwork_Proce
         ->addValue('optout_information.optout_identifier', $mailing['id'])
         ->addValue('optout_information.optout_item', $optout[self::EMAIL_FIELD])
         ->addValue('subject', "Added \"{$suppression_title}\" via Mailingwork")
-        ->addChain('activity_contact', ActivityContact::create()
+        ->addChain('activity_contact', ActivityContact::create(FALSE)
           ->addValue('activity_id', '$id')
           ->addValue('contact_id', $contact['id'])
           ->addValue('record_type_id', 3)
@@ -265,9 +265,8 @@ class CRM_Mailingwork_Processor_Greenpeace_Optouts extends CRM_Mailingwork_Proce
   }
 
   private function prepareGroupCache() {
-    $groups = Group::get()
+    $groups = Group::get(FALSE)
       ->addSelect('id', 'title')
-      ->setCheckPermissions(FALSE)
       ->execute();
     foreach ($groups as $group) {
       $this->groups[$group['id']] = $group['title'];
