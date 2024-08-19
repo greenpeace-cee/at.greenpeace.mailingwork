@@ -48,7 +48,7 @@ class CRM_Mailingwork_Processor_Greenpeace_OptoutsTest extends TestCase implemen
       ->apply(TRUE);
   }
 
-  public function setUp() {
+  public function setUp(): void {
     $session = CRM_Core_Session::singleton();
     $session->set('userID', 1);
     $this->setUpFieldsAndData();
@@ -224,7 +224,7 @@ class CRM_Mailingwork_Processor_Greenpeace_OptoutsTest extends TestCase implemen
     ]);
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     parent::tearDown();
   }
 

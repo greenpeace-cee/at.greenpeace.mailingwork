@@ -23,11 +23,11 @@ class CRM_Mailingwork_Processor_Greenpeace_FoldersTest extends TestCase implemen
       ->apply();
   }
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     parent::tearDown();
   }
 
