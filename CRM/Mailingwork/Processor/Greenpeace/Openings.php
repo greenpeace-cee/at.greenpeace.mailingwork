@@ -131,7 +131,7 @@ class CRM_Mailingwork_Processor_Greenpeace_Openings extends CRM_Mailingwork_Proc
           Civi::log()->warning('[Mailingwork/Openings] Ignoring opening without matching activity');
           continue;
         }
-        $dupeOpening = MailingworkOpening::get()
+        $dupeOpening = MailingworkOpening::get(FALSE)
           ->addSelect('id')
           ->addWhere('activity_contact_id', '=', $parent_activity['activity_contact_id'])
           ->addWhere('opening_date', '=', $opening['date'])
@@ -139,11 +139,11 @@ class CRM_Mailingwork_Processor_Greenpeace_Openings extends CRM_Mailingwork_Proc
           ->first();
         if (!empty($dupeOpening)) {
           Civi::log()->info('[Mailingwork/Openings] Found opening with existing MailingworkOpening, merging');
-          $apiOpening = MailingworkOpening::update()
+          $apiOpening = MailingworkOpening::update(FALSE)
             ->addWhere('id', '=', $dupeOpening['id']);
         }
         else {
-          $apiOpening = MailingworkOpening::create();
+          $apiOpening = MailingworkOpening::create(FALSE);
           $stored_count++;
         }
         $apiOpening->addValue('activity_contact_id', $parent_activity['activity_contact_id'])

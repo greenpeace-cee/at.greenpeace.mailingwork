@@ -52,7 +52,7 @@ class CRM_Mailingwork_Processor_Greenpeace_ClicksTest
       ->apply(TRUE);
   }
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
 
     self::createRequiredOptionGroups();
@@ -62,7 +62,7 @@ class CRM_Mailingwork_Processor_Greenpeace_ClicksTest
     $this->createMailingActivities();
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     CRM_Mailingwork_Identitytracker_Configuration::resetInstance();
 
     parent::tearDown();
@@ -73,16 +73,16 @@ class CRM_Mailingwork_Processor_Greenpeace_ClicksTest
     // -- Define test entities -- //
 
     $interests = [
-      'energy' => [ 
+      'energy' => [
         'id'   => 1,
         'name' => 'Campaign Energy',
       ],
-      'ocean' => [ 
+      'ocean' => [
         'id'   => 2,
         'name' => 'Campaign Ocean',
       ],
     ];
-    
+
     $links = [
       'gp_energy' => [
         'id'        => 1,

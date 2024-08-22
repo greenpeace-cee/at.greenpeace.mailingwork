@@ -23,7 +23,7 @@ class CRM_Mailingwork_Processor_Greenpeace_RetainedEmailsTest extends TestCase i
       ->apply();
   }
 
-  public function setUp() {
+  public function setUp(): void {
     $session = CRM_Core_Session::singleton();
     $session->set('userID', 1);
     $this->callApiSuccess('OptionValue', 'create', [
@@ -35,7 +35,7 @@ class CRM_Mailingwork_Processor_Greenpeace_RetainedEmailsTest extends TestCase i
     parent::setUp();
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     parent::tearDown();
   }
 

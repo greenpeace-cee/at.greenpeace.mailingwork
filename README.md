@@ -1,6 +1,7 @@
 # CiviCRM Mailingwork Integration
 
-[![CircleCI](https://circleci.com/gh/greenpeace-cee/at.greenpeace.mailingwork.svg?style=svg)](https://circleci.com/gh/greenpeace-cee/at.greenpeace.mailingwork)
+[![Run unit tests](https://github.com/greenpeace-cee/at.greenpeace.mailingwork/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/greenpeace-cee/at.greenpeace.mailingwork/actions/workflows/unit-tests.yml)
+
 
 This extension connects CiviCRM with [Mailingwork](https://mailingwork.de/), an email marketing tool.
 
