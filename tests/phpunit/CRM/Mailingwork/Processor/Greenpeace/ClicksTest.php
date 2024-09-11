@@ -336,11 +336,13 @@ class CRM_Mailingwork_Processor_Greenpeace_ClicksTest
 
     foreach (range(1, 3) as $i) {
       $createMailingResult = Api4\MailingworkMailing::create()
-        ->addValue('click_sync_status_id:name', $syncStatuses[$i - 1])
-        ->addValue('mailingwork_identifier',    random_int(0, 999))
-        ->addValue('status_id',                 'activated')
-        ->addValue('subject',                   "Mailing #$i")
-        ->addValue('type_id',                   'standard')
+        ->addValue('click_sync_status_id:name',     $syncStatuses[$i - 1])
+        ->addValue('mailingwork_identifier',        random_int(0, 999))
+        ->addValue('recipient_sync_status_id:name', 'in_progress')
+        ->addValue('sending_date',                  date('Y-m-d'))
+        ->addValue('status_id',                     'activated')
+        ->addValue('subject',                       "Mailing #$i")
+        ->addValue('type_id',                       'standard')
         ->execute();
 
       $this->mailings[] = $createMailingResult->first();
