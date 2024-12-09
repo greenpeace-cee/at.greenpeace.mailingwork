@@ -1,11 +1,13 @@
 {
+  "name": "greenpeace-cee/mailingwork",
+  "type": "civicrm-ext",
   "repositories": [
     {
-      "type": "git",
-      "url": "https://github.com/greenpeace-cee/mailingwork.git"
+      "type": "vcs",
+      "url": "git@github.com:greenpeace-cee/mailingwork.git"
     }
   ],
   "require": {
-    "b-connect/mailingwork": "master@dev"
+    "b-connect/mailingwork": "dev-master"
   }
 }
