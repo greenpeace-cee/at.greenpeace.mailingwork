@@ -30,7 +30,7 @@ class CRM_Mailingwork_Upgrader extends CRM_Extension_Upgrader_Base {
 
   public function upgrade_0110() {
     $this->ctx->log->info('Applying update 0110');
-    CRM_Core_DAO::executeQuery("CREATE TABLE `civicrm_mailingwork_opening` (
+    CRM_Core_DAO::executeQuery("CREATE TABLE IF NOT EXISTS `civicrm_mailingwork_opening` (
       `id` int unsigned NOT NULL AUTO_INCREMENT  COMMENT 'Unique MailingworkOpening ID',
       `activity_contact_id` int unsigned NOT NULL   COMMENT 'FK to ActivityContact',
       `opening_date` datetime NOT NULL   COMMENT 'Date of the opening',
@@ -48,7 +48,7 @@ class CRM_Mailingwork_Upgrader extends CRM_Extension_Upgrader_Base {
 
     // MailingworkInterest
     CRM_Core_DAO::executeQuery("
-      CREATE TABLE `civicrm_mailingwork_interest` (
+      CREATE TABLE IF NOT EXISTS `civicrm_mailingwork_interest` (
         `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'Unique MailingworkInterest ID',
         `name` varchar(255) NULL COMMENT 'Name of the Interest',
         `mailingwork_id` int unsigned NOT NULL COMMENT 'Unique Identifier used by Mailingwork',
@@ -58,7 +58,7 @@ class CRM_Mailingwork_Upgrader extends CRM_Extension_Upgrader_Base {
 
     // MailingworkLink
     CRM_Core_DAO::executeQuery("
-      CREATE TABLE `civicrm_mailingwork_link` (
+      CREATE TABLE IF NOT EXISTS `civicrm_mailingwork_link` (
         `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'Unique MailingworkLink ID',
         `url` varchar(1023) NULL COMMENT 'URL of the Link',
         `mailingwork_id` int unsigned NOT NULL COMMENT 'Unique Identifier used by Mailingwork',
@@ -70,7 +70,7 @@ class CRM_Mailingwork_Upgrader extends CRM_Extension_Upgrader_Base {
 
     // MailingworkLinkInterest
     CRM_Core_DAO::executeQuery("
-      CREATE TABLE `civicrm_mailingwork_link_interest` (
+      CREATE TABLE IF NOT EXISTS `civicrm_mailingwork_link_interest` (
         `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'Unique MailingworkLinkInterest ID',
         `link_id` int unsigned NOT NULL COMMENT 'FK to MailingworkLink',
         `interest_id` int unsigned NOT NULL COMMENT 'FK to MailingworkInterest',
@@ -82,7 +82,7 @@ class CRM_Mailingwork_Upgrader extends CRM_Extension_Upgrader_Base {
 
     // MailingworkClick
     CRM_Core_DAO::executeQuery("
-      CREATE TABLE `civicrm_mailingwork_click` (
+      CREATE TABLE IF NOT EXISTS `civicrm_mailingwork_click` (
         `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'Unique MailingworkClick ID',
         `click_date` datetime NULL COMMENT 'Date of the click',
         `activity_contact_id` int unsigned NOT NULL COMMENT 'FK to ActivityContact',
